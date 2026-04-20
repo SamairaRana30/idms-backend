@@ -8,32 +8,45 @@ from flask_cors import CORS
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
+import urllib.parse
 
-# Load environment variables
 load_dotenv()
 
-# Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
-# Configuration
 app.config['JWT_SECRET'] = os.getenv('JWT_SECRET', 'my_super_secret_key_12345')
 
-# Database connection function
 def get_db_connection(environment='dev'):
+    """Get database connection with proper schema handling"""
+    
+    # Get the base URL without any query parameters
     if environment == 'dev':
         url = os.getenv('DEV_DATABASE_URL')
+        schema = 'idms_dev'
     elif environment == 'staging':
         url = os.getenv('STAGING_DATABASE_URL')
+        schema = 'idms_staging'
     else:
         url = os.getenv('PROD_DATABASE_URL')
+        schema = 'idms_prod'
     
     if not url:
         raise Exception(f"Database URL not found for environment: {environment}")
     
-    return psycopg2.connect(url)
+    # Clean the URL - remove any existing query parameters
+    if '?' in url:
+        url = url.split('?')[0]
+    
+    # Connect to the database
+    conn = psycopg2.connect(url)
+    
+    # Set the schema for this connection
+    with conn.cursor() as cur:
+        cur.execute(f"SET search_path TO {schema}")
+    
+    return conn
 
-# JWT decorator
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -48,6 +61,19 @@ def token_required(f):
             return jsonify({'error': f'Invalid token: {str(e)}'}), 401
         return f(*args, **kwargs)
     return decorated
+
+def test_database():
+    """Test database connection"""
+    try:
+        conn = get_db_connection('dev')
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.close()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Database error: {str(e)}")
+        return False
 
 # ============ ROOT ENDPOINTS ============
 @app.route('/', methods=['GET'])
@@ -67,23 +93,12 @@ def home():
 
 @app.route('/api/v1/health', methods=['GET'])
 def health_check():
+    db_status = 'connected' if test_database() else 'disconnected'
     return jsonify({
         'status': 'healthy',
-        'timestamp': datetime.now().isoformat(),
-        'database': 'connected' if test_database() else 'disconnected'
+        'database': db_status,
+        'timestamp': datetime.now().isoformat()
     })
-
-def test_database():
-    """Test database connection"""
-    try:
-        conn = get_db_connection('dev')
-        cur = conn.cursor()
-        cur.execute("SELECT 1")
-        cur.close()
-        conn.close()
-        return True
-    except:
-        return False
 
 # ============ AUTHENTICATION ============
 @app.route('/api/v1/auth/login', methods=['POST'])
@@ -112,9 +127,7 @@ def login():
         if not user:
             return jsonify({'error': 'User not found'}), 401
         
-        # Check password
-        stored_hash = user['password_hash'].encode('utf-8')
-        if bcrypt.checkpw(password.encode('utf-8'), stored_hash):
+        if bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
             token = jwt.encode({
                 'user_id': user['id'],
                 'email': user['email'],
