@@ -22,10 +22,8 @@ def get_db_connection():
     if not database_url:
         raise Exception("DEV_DATABASE_URL environment variable not set")
     
-    # Connect directly (pooler already handles SSL)
     conn = psycopg2.connect(database_url)
     
-    # Set the search path to your 'idms_dev' schema
     with conn.cursor() as cur:
         cur.execute("SET search_path TO idms_dev")
     
@@ -55,6 +53,8 @@ def home():
         'endpoints': {
             'health': '/api/v1/health',
             'login': '/api/v1/auth/login (POST)',
+            'register': '/api/v1/auth/register (POST)',
+            'users': '/api/v1/users (GET)',
             'init': '/api/v1/init (POST)'
         }
     })
@@ -79,17 +79,18 @@ def health_check():
 
 @app.route('/api/v1/init', methods=['POST'])
 def init_test_data():
-    """Create test admin user (password: Test@123) in the idms_dev schema"""
+    """Create test admin user (password: Test@123)"""
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-
-        hashed_password = bcrypt.hashpw('Test@123'.encode('utf-8'), bcrypt.gensalt())
-
-        # Check if admin already exists
+        
+        password = 'Test@123'
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+        
         cur.execute("SELECT id FROM users WHERE email = %s", ('admin@test.com',))
         existing_user = cur.fetchone()
-
+        
         if not existing_user:
             cur.execute(
                 "INSERT INTO users (email, password_hash, role) VALUES (%s, %s, %s)",
@@ -99,39 +100,33 @@ def init_test_data():
             message = 'Test admin user created successfully.'
         else:
             message = 'Test admin user already exists.'
-
+        
         cur.close()
         conn.close()
         return jsonify({'success': True, 'message': message})
-
+    
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/v1/auth/login', methods=['POST'])
 def login():
     data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No JSON data provided'}), 400
-
     email = data.get('email')
     password = data.get('password')
-
-    if not email or not password:
-        return jsonify({'error': 'Email and password required'}), 400
-
+    
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
-
+        
         cur.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = cur.fetchone()
-
+        
         cur.close()
         conn.close()
-
+        
         if not user:
             return jsonify({'error': 'User not found'}), 401
-
+        
         if bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
             token = jwt.encode({
                 'user_id': user['id'],
@@ -139,19 +134,60 @@ def login():
                 'role': user['role'],
                 'exp': datetime.utcnow() + timedelta(hours=24)
             }, app.config['JWT_SECRET'], algorithm='HS256')
-
+            
             return jsonify({
                 'success': True,
                 'token': token,
-                'user': {
-                    'id': user['id'],
-                    'email': user['email'],
-                    'role': user['role']
-                }
+                'user': {'id': user['id'], 'email': user['email'], 'role': user['role']}
             })
-
+        
         return jsonify({'error': 'Invalid password'}), 401
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
+@app.route('/api/v1/auth/register', methods=['POST'])
+def register():
+    """Register a new user"""
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    
+    if not email or not password:
+        return jsonify({'error': 'Email and password required'}), 400
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        
+        cur.execute(
+            "INSERT INTO users (email, password_hash, role) VALUES (%s, %s, %s) RETURNING id",
+            (email, hashed.decode('utf-8'), 'user')
+        )
+        user_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'User created', 'user_id': user_id}), 201
+    except psycopg2.IntegrityError:
+        return jsonify({'error': 'Email already exists'}), 409
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/v1/users', methods=['GET'])
+@token_required
+def get_users():
+    """Get all users (protected endpoint)"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT id, email, role, is_active, created_at FROM users")
+        users = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify({'success': True, 'users': users})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
