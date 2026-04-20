@@ -9,13 +9,17 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
 
+# Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
-app.config['JWT_SECRET'] = os.getenv('JWT_SECRET', 'mysecretkey')
+# Configuration
+app.config['JWT_SECRET'] = os.getenv('JWT_SECRET', 'my_super_secret_key_12345')
 
+# Database connection function
 def get_db_connection(environment='dev'):
     if environment == 'dev':
         url = os.getenv('DEV_DATABASE_URL')
@@ -24,8 +28,12 @@ def get_db_connection(environment='dev'):
     else:
         url = os.getenv('PROD_DATABASE_URL')
     
+    if not url:
+        raise Exception(f"Database URL not found for environment: {environment}")
+    
     return psycopg2.connect(url)
 
+# JWT decorator
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -36,21 +44,60 @@ def token_required(f):
             token = token.split(' ')[1]
             data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=['HS256'])
             request.user = data
-        except:
-            return jsonify({'error': 'Invalid token'}), 401
+        except Exception as e:
+            return jsonify({'error': f'Invalid token: {str(e)}'}), 401
         return f(*args, **kwargs)
     return decorated
 
+# ============ ROOT ENDPOINTS ============
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        'message': 'IDMS API is running!',
+        'status': 'online',
+        'version': '1.0.0',
+        'endpoints': {
+            'health': '/api/v1/health',
+            'login': '/api/v1/auth/login (POST)',
+            'register': '/api/v1/auth/register (POST)',
+            'users': '/api/v1/users (GET)',
+            'init': '/api/v1/init (POST)'
+        }
+    })
+
 @app.route('/api/v1/health', methods=['GET'])
 def health_check():
-    return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat(),
+        'database': 'connected' if test_database() else 'disconnected'
+    })
 
+def test_database():
+    """Test database connection"""
+    try:
+        conn = get_db_connection('dev')
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.close()
+        conn.close()
+        return True
+    except:
+        return False
+
+# ============ AUTHENTICATION ============
 @app.route('/api/v1/auth/login', methods=['POST'])
 def login():
     data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No JSON data provided'}), 400
+    
     email = data.get('email')
     password = data.get('password')
     env = data.get('environment', 'dev')
+    
+    if not email or not password:
+        return jsonify({'error': 'Email and password required'}), 400
     
     try:
         conn = get_db_connection(env)
@@ -58,10 +105,16 @@ def login():
         
         cur.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = cur.fetchone()
+        
         cur.close()
         conn.close()
         
-        if user and bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
+        if not user:
+            return jsonify({'error': 'User not found'}), 401
+        
+        # Check password
+        stored_hash = user['password_hash'].encode('utf-8')
+        if bcrypt.checkpw(password.encode('utf-8'), stored_hash):
             token = jwt.encode({
                 'user_id': user['id'],
                 'email': user['email'],
@@ -69,18 +122,32 @@ def login():
                 'exp': datetime.utcnow() + timedelta(hours=24)
             }, app.config['JWT_SECRET'], algorithm='HS256')
             
-            return jsonify({'token': token, 'user': {'id': user['id'], 'email': user['email'], 'role': user['role']}})
+            return jsonify({
+                'success': True,
+                'token': token,
+                'user': {
+                    'id': user['id'],
+                    'email': user['email'],
+                    'role': user['role']
+                }
+            })
         
-        return jsonify({'error': 'Invalid credentials'}), 401
+        return jsonify({'error': 'Invalid password'}), 401
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/v1/auth/register', methods=['POST'])
 def register():
     data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No JSON data provided'}), 400
+    
     email = data.get('email')
     password = data.get('password')
     env = data.get('environment', 'dev')
+    
+    if not email or not password:
+        return jsonify({'error': 'Email and password required'}), 400
     
     hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
     
@@ -97,12 +164,13 @@ def register():
         cur.close()
         conn.close()
         
-        return jsonify({'message': 'User created', 'user_id': user_id}), 201
+        return jsonify({'success': True, 'message': 'User created', 'user_id': user_id}), 201
     except psycopg2.IntegrityError:
         return jsonify({'error': 'Email already exists'}), 409
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ============ USERS ============
 @app.route('/api/v1/users', methods=['GET'])
 @token_required
 def get_users():
@@ -115,12 +183,14 @@ def get_users():
         users = cur.fetchall()
         cur.close()
         conn.close()
-        return jsonify(users)
+        return jsonify({'success': True, 'users': users})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ============ INITIALIZE TEST DATA ============
 @app.route('/api/v1/init', methods=['POST'])
 def init_test_data():
+    """Create test admin user (password: Test@123)"""
     env = request.args.get('environment', 'dev')
     
     hashed = bcrypt.hashpw('Test@123'.encode('utf-8'), bcrypt.gensalt())
@@ -129,6 +199,7 @@ def init_test_data():
         conn = get_db_connection(env)
         cur = conn.cursor()
         
+        # Check if admin exists
         cur.execute("SELECT id FROM users WHERE email = %s", ('admin@test.com',))
         existing = cur.fetchone()
         
@@ -140,13 +211,53 @@ def init_test_data():
             conn.commit()
             cur.close()
             conn.close()
-            return jsonify({'message': 'Test admin created'})
+            return jsonify({'success': True, 'message': 'Test admin created'})
         else:
             cur.close()
             conn.close()
-            return jsonify({'message': 'Test admin already exists'})
+            return jsonify({'success': True, 'message': 'Test admin already exists'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ============ NOTIFICATIONS ============
+@app.route('/api/v1/notifications', methods=['GET'])
+@token_required
+def get_notifications():
+    env = request.args.get('environment', 'dev')
+    
+    try:
+        conn = get_db_connection(env)
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT * FROM notifications ORDER BY created_at DESC")
+        notifications = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify({'success': True, 'notifications': notifications})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/v1/notifications', methods=['POST'])
+@token_required
+def create_notification():
+    data = request.get_json()
+    env = data.get('environment', 'dev')
+    
+    try:
+        conn = get_db_connection(env)
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO notifications (type, recipient, message, status) VALUES (%s, %s, %s, %s) RETURNING id",
+            (data.get('type'), data.get('recipient'), data.get('message'), 'pending')
+        )
+        notification_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Notification created', 'id': notification_id}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', debug=False, port=port)
