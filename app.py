@@ -17,18 +17,18 @@ CORS(app)
 app.config['JWT_SECRET'] = os.getenv('JWT_SECRET', 'my_super_secret_key_12345')
 
 def get_db_connection():
-    """Get a database connection and set the correct schema"""
+    """Get a database connection using the Session Pooler URL."""
     database_url = os.getenv('DEV_DATABASE_URL')
     if not database_url:
         raise Exception("DEV_DATABASE_URL environment variable not set")
-
-    # Connect using the clean URL
+    
+    # Connect directly (pooler already handles SSL)
     conn = psycopg2.connect(database_url)
-
-    # Set the search path to your 'idms_dev' schema for all queries in this connection
+    
+    # Set the search path to your 'idms_dev' schema
     with conn.cursor() as cur:
         cur.execute("SET search_path TO idms_dev")
-
+    
     return conn
 
 def token_required(f):
