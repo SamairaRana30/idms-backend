@@ -4,27 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - IDMS</title>
-
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <style>
-        .validation-rules {
-            font-size: 12px;
-            margin-top: 5px;
-        }
-        .rule-valid {
-            color: green;
-        }
-        .rule-invalid {
-            color: red;
-        }
-        .password-strength {
-            height: 5px;
-            margin-top: 5px;
-            transition: all 0.3s;
-        }
-    </style>
 </head>
 <body class="bg-light">
 
@@ -36,47 +16,26 @@
                     <h3 class="mb-0">Register</h3>
                 </div>
                 <div class="card-body">
-                    <form id="registerForm" novalidate>
-                        <!-- Email Field -->
+                    <form id="registerForm">
                         <div class="mb-3">
-                            <label class="form-label">Email Address *</label>
+                            <label class="form-label">Email Address</label>
                             <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
-                            <div class="validation-rules" id="emailError"></div>
                         </div>
 
-                        <!-- Password Field with validation rules -->
                         <div class="mb-3">
-                            <label class="form-label">Password *</label>
-                            <input type="password" id="password" class="form-control" placeholder="Create a password" required>
-                            <div class="password-strength" id="passwordStrength"></div>
-                            <div class="validation-rules">
-                                <div id="ruleLength">✓ Must be at least 6 characters</div>
-                                <div id="ruleUppercase">✓ Must contain at least 1 uppercase letter</div>
-                                <div id="ruleLowercase">✓ Must contain at least 1 lowercase letter</div>
-                                <div id="ruleNumber">✓ Must contain at least 1 number</div>
-                                <div id="ruleSpecial">✓ Must contain at least 1 special character (!@#$%^&*)</div>
-                            </div>
+                            <label class="form-label">Password</label>
+                            <input type="password" id="password" class="form-control" placeholder="Password (min 6 characters)" required>
                         </div>
 
-                        <!-- Confirm Password -->
                         <div class="mb-3">
-                            <label class="form-label">Confirm Password *</label>
-                            <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm your password" required>
-                            <div class="validation-rules" id="confirmError"></div>
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm password" required>
                         </div>
 
-                        <!-- Terms and Conditions -->
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" id="termsCheckbox" class="form-check-input" required>
-                            <label class="form-check-label">
-                                I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a>
-                            </label>
-                        </div>
-
-                        <button type="submit" id="submitBtn" class="btn btn-primary w-100" disabled>Register</button>
+                        <button type="submit" id="registerBtn" class="btn btn-primary w-100">Register</button>
                     </form>
 
-                    <div id="responseMsg" class="mt-3"></div>
+                    <div id="message" class="mt-3"></div>
                     <a href="index.html" class="btn btn-link mt-2 d-block text-center">Back to Home</a>
                 </div>
             </div>
@@ -84,153 +43,91 @@
     </div>
 </div>
 
-<!-- Terms Modal -->
-<div class="modal fade" id="termsModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Terms and Conditions</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>By registering, you agree to:</p>
-                <ul>
-                    <li>Provide accurate information</li>
-                    <li>Keep your password secure</li>
-                    <li>Not share your account</li>
-                    <li>Follow our community guidelines</li>
-                </ul>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">I Agree</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script type="module">
-    import { register } from './js/api.js';
+
+<script>
+    // Simple JavaScript without module imports for testing
+    console.log("Page loaded!");
     
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const confirmInput = document.getElementById('confirmPassword');
-    const termsCheckbox = document.getElementById('termsCheckbox');
-    const submitBtn = document.getElementById('submitBtn');
-    const responseMsg = document.getElementById('responseMsg');
+    const form = document.getElementById('registerForm');
+    const messageDiv = document.getElementById('message');
     
-    // Validation Functions
-    function validateEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-    
-    function validatePassword(password) {
-        return {
-            length: password.length >= 6,
-            uppercase: /[A-Z]/.test(password),
-            lowercase: /[a-z]/.test(password),
-            number: /[0-9]/.test(password),
-            special: /[!@#$%^&*]/.test(password)
-        };
-    }
-    
-    // Real-time password validation
-    passwordInput.addEventListener('input', () => {
-        const password = passwordInput.value;
-        const rules = validatePassword(password);
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
         
-        document.getElementById('ruleLength').className = rules.length ? 'rule-valid' : 'rule-invalid';
-        document.getElementById('ruleUppercase').className = rules.uppercase ? 'rule-valid' : 'rule-invalid';
-        document.getElementById('ruleLowercase').className = rules.lowercase ? 'rule-valid' : 'rule-invalid';
-        document.getElementById('ruleNumber').className = rules.number ? 'rule-valid' : 'rule-invalid';
-        document.getElementById('ruleSpecial').className = rules.special ? 'rule-valid' : 'rule-invalid';
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
         
-        // Password strength bar
-        const strengthBar = document.getElementById('passwordStrength');
-        let strength = 0;
-        if (rules.length) strength++;
-        if (rules.uppercase) strength++;
-        if (rules.lowercase) strength++;
-        if (rules.number) strength++;
-        if (rules.special) strength++;
+        console.log("Form submitted!", { email, passwordLength: password.length });
         
-        const colors = ['#dc3545', '#ffc107', '#ffc107', '#198754', '#198754'];
-        const widths = ['20%', '40%', '60%', '80%', '100%'];
-        strengthBar.style.background = colors[strength - 1] || '#dc3545';
-        strengthBar.style.width = widths[strength - 1] || '20%';
+        // Clear previous message
+        messageDiv.innerHTML = '';
         
-        checkFormValidity();
-    });
-    
-    // Confirm password validation
-    confirmInput.addEventListener('input', () => {
-        const confirmError = document.getElementById('confirmError');
-        if (confirmInput.value !== passwordInput.value) {
-            confirmError.innerHTML = '❌ Passwords do not match';
-            confirmError.style.color = 'red';
-        } else if (confirmInput.value === '') {
-            confirmError.innerHTML = '';
-        } else {
-            confirmError.innerHTML = '✓ Passwords match';
-            confirmError.style.color = 'green';
+        // Simple validation
+        if (!email || !password || !confirmPassword) {
+            messageDiv.innerHTML = '<div class="alert alert-danger">Please fill all fields</div>';
+            return;
         }
-        checkFormValidity();
-    });
-    
-    // Email validation
-    emailInput.addEventListener('input', () => {
-        const emailError = document.getElementById('emailError');
-        if (!validateEmail(emailInput.value)) {
-            emailError.innerHTML = '❌ Please enter a valid email address';
-            emailError.style.color = 'red';
-        } else {
-            emailError.innerHTML = '✓ Valid email address';
-            emailError.style.color = 'green';
+        
+        if (password.length < 6) {
+            messageDiv.innerHTML = '<div class="alert alert-danger">Password must be at least 6 characters</div>';
+            return;
         }
-        checkFormValidity();
-    });
-    
-    // Terms checkbox
-    termsCheckbox.addEventListener('change', checkFormValidity);
-    
-    function checkFormValidity() {
-        const isValidEmail = validateEmail(emailInput.value);
-        const passwordRules = validatePassword(passwordInput.value);
-        const isPasswordValid = passwordRules.length && passwordRules.uppercase && passwordRules.lowercase && passwordRules.number && passwordRules.special;
-        const doPasswordsMatch = confirmInput.value === passwordInput.value && passwordInput.value !== '';
-        const isTermsAccepted = termsCheckbox.checked;
         
-        submitBtn.disabled = !(isValidEmail && isPasswordValid && doPasswordsMatch && isTermsAccepted);
-    }
-    
-    // Form submission
-    document.getElementById("registerForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
+        if (password !== confirmPassword) {
+            messageDiv.innerHTML = '<div class="alert alert-danger">Passwords do not match</div>';
+            return;
+        }
         
-        responseMsg.innerHTML = '<div class="alert alert-info">Processing registration...</div>';
+        if (!email.includes('@') || !email.includes('.')) {
+            messageDiv.innerHTML = '<div class="alert alert-danger">Please enter a valid email address</div>';
+            return;
+        }
         
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
+        // Show loading
+        messageDiv.innerHTML = '<div class="alert alert-info">Registering...</div>';
         
-        try {
-            const result = await register(email, password);
-            console.log("API Response:", result);
+        // Call the API
+        fetch('https://idms-backend-deu6.onrender.com/api/v1/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("API Response:", data);
             
-            if (result && (result.success === true || result.token || result.user || result.id)) {
-                responseMsg.innerHTML = '<div class="alert alert-success">✅ Registration successful! Redirecting to login...</div>';
+            if (data.success === true || data.user || data.id || data.token) {
+                messageDiv.innerHTML = '<div class="alert alert-success">✅ Registration successful! Redirecting to login...</div>';
+                
+                // Store email for convenience
                 localStorage.setItem('registered_email', email);
                 
+                // Redirect after 2 seconds
                 setTimeout(() => {
                     window.location.href = "login.html";
                 }, 2000);
             } else {
-                const errorText = result?.message || result?.error || "Registration failed";
-                responseMsg.innerHTML = `<div class="alert alert-danger">❌ ${errorText}</div>`;
+                const errorMsg = data.message || data.error || "Registration failed";
+                messageDiv.innerHTML = `<div class="alert alert-danger">❌ Registration failed: ${errorMsg}</div>`;
             }
-        } catch (err) {
-            responseMsg.innerHTML = `<div class="alert alert-danger">❌ Error: ${err.message}</div>`;
-        }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            messageDiv.innerHTML = `<div class="alert alert-danger">❌ Error: ${error.message}. Please check your connection.</div>`;
+        });
+    });
+    
+    // Test if button works
+    const btn = document.getElementById('registerBtn');
+    btn.addEventListener('click', function() {
+        console.log("Button was clicked!");
     });
 </script>
 
