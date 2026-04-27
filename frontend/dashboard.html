@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDMS Dashboard</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .sidebar {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            border-right: 1px solid #dee2e6;
+        }
+        .nav-link.active {
+            background-color: #0d6efd;
+            color: white !important;
+        }
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            background-color: #0d6efd;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .table-responsive {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .navbar-brand i {
+            margin-right: 8px;
+        }
+        .card-stats {
+            transition: transform 0.2s;
+        }
+        .card-stats:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark bg-primary">
+    <div class="container-fluid px-4">
+        <span class="navbar-brand">
+            <i class="fas fa-id-card"></i> IDMS Dashboard
+        </span>
+        <div class="d-flex align-items-center">
+            <span class="text-white me-3" id="navUserEmail">
+                <i class="fas fa-user"></i> Loading...
+            </span>
+            <button id="logoutBtn" class="btn btn-light btn-sm">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 px-0 sidebar">
+            <div class="p-3">
+                <h5 class="text-primary mb-4">
+                    <i class="fas fa-chart-line"></i> Menu
+                </h5>
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item mb-2">
+                        <a class="nav-link active" id="dashboardTab" href="#" style="cursor: pointer;">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" id="usersTab" href="#" style="cursor: pointer;">
+                            <i class="fas fa-users me-2"></i> Users List
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" id="profileTab" href="#" style="cursor: pointer;">
+                            <i class="fas fa-user-circle me-2"></i> My Profile
+                        </a>
+                    </li>
+                </ul>
+                <hr>
+                <div class="mt-3">
+                    <small class="text-muted">Logged in as:</small>
+                    <p class="mb-0 fw-bold" id="sidebarUserEmail">-</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 p-4">
+            <!-- Dashboard Content -->
+            <div id="dashboardContent">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>
+                        <i class="fas fa-chart-simple me-2 text-primary"></i>
+                        Analytics Overview
+                    </h2>
+                </div>
+                
+                <div class="row" id="statsCards">
+                    <div class="col-md-4 mb-3">
+                        <div class="card card-stats bg-primary text-white shadow">
+                            <div class="card-body">
+                                <h5><i class="fas fa-users me-2"></i> Total Users</h5>
+                                <h2 id="totalUsers" class="display-4">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card card-stats bg-success text-white shadow">
+                            <div class="card-body">
+                                <h5><i class="fas fa-check-circle me-2"></i> Status</h5>
+                                <p class="h4">✅ Active</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card card-stats bg-info text-white shadow">
+                            <div class="card-body">
+                                <h5><i class="fas fa-clock me-2"></i> Session</h5>
+                                <p class="h4" id="sessionTime">Logged In</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Data Card -->
+                <div id="dataArea" class="card p-4 shadow-sm mt-3">
+                    <p>Loading dashboard data...</p>
+                </div>
+            </div>
+
+            <!-- Users List Content (hidden by default) -->
+            <div id="usersContent" style="display: none;">
+                <h2 class="mb-4">
+                    <i class="fas fa-users me-2 text-primary"></i> 
+                    Registered Users
+                </h2>
+                <div class="card shadow">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th>#</th>
+                                        <th><i class="fas fa-envelope me-1"></i> Email</th>
+                                        <th><i class="fas fa-calendar me-1"></i> Member Since</th>
+                                        <th><i class="fas fa-badge me-1"></i> Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            <br>Loading users...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Content (hidden by default) -->
+            <div id="profileContent" style="display: none;">
+                <h2 class="mb-4">
+                    <i class="fas fa-user-circle me-2 text-primary"></i> 
+                    My Profile
+                </h2>
+                <div class="card shadow">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <div class="user-avatar mx-auto mb-3">
+                                    <i class="fas fa-user fa-2x"></i>
+                                </div>
+                                <button id="editProfileBtn" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-edit"></i> Edit Profile
+                                </button>
+                            </div>
+                            <div class="col-md-8">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th width="150"><i class="fas fa-envelope"></i> Email:</th>
+                                        <td id="profileEmail">-</td>
+                                    </tr>
+                                    <tr>
+                                        <th><i class="fas fa-calendar-alt"></i> Member Since:</th>
+                                        <td id="profileDate">-</td>
+                                    </tr>
+                                    <tr>
+                                        <th><i class="fas fa-shield-alt"></i> Account Status:</th>
+                                        <td><span class="badge bg-success">Active</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th><i class="fas fa-id-card"></i> User ID:</th>
+                                        <td id="profileId">-</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- API wrapper -->
+<script src="js/api.js"></script>
+
+<!-- Dashboard Logic -->
+<script type="module">
+    import { getUsers, getProfile } from './js/api.js';
+    
+    // ============================================
+    // PROTECTED ROUTE - Check if user is logged in
+    // ============================================
+    const token = localStorage.getItem('authToken');
+    const userEmail = localStorage.getItem('userEmail');
+    
+    if (!token || !userEmail) {
+        // Not logged in - redirect to login
+        window.location.href = "login.html";
+    }
+    
+    // Display user email in navbar and sidebar
+    document.getElementById('navUserEmail').innerHTML = `<i class="fas fa-user"></i> ${userEmail}`;
+    document.getElementById('sidebarUserEmail').textContent = userEmail;
+    
+    // ============================================
+    // TAB NAVIGATION
+    // ============================================
+    const dashboardTab = document.getElementById('dashboardTab');
+    const usersTab = document.getElementById('usersTab');
+    const profileTab = document.getElementById('profileTab');
+    const dashboardContent = document.getElementById('dashboardContent');
+    const usersContent = document.getElementById('usersContent');
+    const profileContent = document.getElementById('profileContent');
+    
+    function setActiveTab(activeTab) {
+        // Update active class on tabs
+        [dashboardTab, usersTab, profileTab].forEach(tab => {
+            tab.classList.remove('active');
+        });
+        activeTab.classList.add('active');
+        
+        // Hide all content
+        dashboardContent.style.display = 'none';
+        usersContent.style.display = 'none';
+        profileContent.style.display = 'none';
+        
+        // Show selected content
+        if (activeTab === dashboardTab) dashboardContent.style.display = 'block';
+        if (activeTab === usersTab) {
+            usersContent.style.display = 'block';
+            loadUsersList();
+        }
+        if (activeTab === profileTab) {
+            profileContent.style.display = 'block';
+            loadUserProfile();
+        }
+    }
+    
+    dashboardTab.addEventListener('click', (e) => {
+        e.preventDefault();
+        setActiveTab(dashboardTab);
+    });
+    
+    usersTab.addEventListener('click', (e) => {
+        e.preventDefault();
+        setActiveTab(usersTab);
+    });
+    
+    profileTab.addEventListener('click', (e) => {
+        e.preventDefault();
+        setActiveTab(profileTab);
+    });
+    
+    // ============================================
+    // LOAD DASHBOARD DATA (Analytics)
+    // ============================================
+    async function loadDashboard() {
+        try {
+            // Try to fetch dashboard data from API
+            const response = await fetch('https://idms-backend-deu6.onrender.com/api/v1/dashboard', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            let data = {};
+            if (response.ok) {
+                data = await response.json();
+            }
+            
+            document.getElementById("dataArea").innerHTML = `
+                <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i>API Response</h5>
+                <pre class="bg-light p-3 border rounded" style="max-height: 300px; overflow: auto;">${JSON.stringify(data, null, 2)}</pre>
+                <p class="text-muted mt-2 small"><i class="fas fa-info-circle"></i> Dashboard is protected - you must be logged in to view this page.</p>
+            `;
+        } catch (err) {
+            document.getElementById("dataArea").innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Dashboard is working! You are logged in as <strong>${userEmail}</strong>.
+                    <hr>
+                    <small>API endpoint may require additional setup. User list and profile features are functional.</small>
+                </div>
+            `;
+        }
+    }
+    
+    // ============================================
+    // LOAD USERS LIST
+    // ============================================
+    async function loadUsersList() {
+        const usersTableBody = document.getElementById('usersTableBody');
+        usersTableBody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm text-primary"></div> Loading users...</td></tr>';
+        
+        try {
+            const result = await getUsers(token);
+            console.log("Users list response:", result);
+            
+            // Parse different response formats
+            let users = [];
+            if (Array.isArray(result)) {
+                users = result;
+            } else if (result.users && Array.isArray(result.users)) {
+                users = result.users;
+            } else if (result.data && Array.isArray(result.data)) {
+                users = result.data;
+            }
+            
+            // Update total users count
+            document.getElementById('totalUsers').textContent = users.length;
+            
+            if (users.length === 0) {
+                usersTableBody.innerHTML = '<tr><td colspan="4" class="text-center">No users found</td></tr>';
+                return;
+            }
+            
+            // Display users list
+            usersTableBody.innerHTML = users.map((user, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><i class="fas fa-envelope me-2 text-secondary"></i>${user.email || user.username || 'N/A'}</td>
+                    <td><i class="fas fa-calendar me-2 text-secondary"></i>${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
+                    <td><span class="badge bg-success">Active</span></td>
+                </tr>
+            `).join('');
+            
+        } catch (err) {
+            console.error("Error loading users:", err);
+            usersTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Error loading users: ${err.message}</td></tr>`;
+        }
+    }
+    
+    // ============================================
+    // LOAD USER PROFILE
+    // ============================================
+    async function loadUserProfile() {
+        try {
+            const result = await getProfile(token);
+            console.log("Profile response:", result);
+            
+            let profile = result.user || result.data || result;
+            
+            document.getElementById('profileEmail').textContent = profile.email || userEmail;
+            document.getElementById('profileId').textContent = profile.id || profile._id || 'Not available';
+            document.getElementById('profileDate').textContent = profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'Today';
+            
+        } catch (err) {
+            console.error("Error loading profile:", err);
+            // Fallback to localStorage data
+            document.getElementById('profileEmail').textContent = userEmail;
+            document.getElementById('profileId').textContent = 'Local session';
+            document.getElementById('profileDate').textContent = new Date().toLocaleDateString();
+        }
+    }
+    
+    // ============================================
+    // EDIT PROFILE (Bonus)
+    // ============================================
+    document.getElementById('editProfileBtn')?.addEventListener('click', () => {
+        alert(`Profile edit feature\nCurrent email: ${userEmail}\n\nYou can extend this to update profile!`);
+    });
+    
+    // ============================================
+    // LOGOUT FUNCTIONALITY
+    // ============================================
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            // Clear all auth data
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('registered_email');
+            
+            // Redirect to home
+            window.location.href = "index.html";
+        });
+    }
+    
+    // Set session time
+    document.getElementById('sessionTime').innerHTML = new Date().toLocaleTimeString();
+    
+    // Load initial dashboard
+    loadDashboard();
+    
+    // Update session time every minute
+    setInterval(() => {
+        document.getElementById('sessionTime').innerHTML = new Date().toLocaleTimeString();
+    }, 60000);
+</script>
+
+</body>
+</html>
+
