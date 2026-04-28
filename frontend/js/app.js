@@ -1,8 +1,28 @@
-const BASE_URL = "http://127.0.0.1:5000/api";
+const BASE_URL = "http://127.0.0.1:5000/api/users";
 
-// LOGIN (dummy for now)
-function login() {
-    alert("Login working (dummy) ✅");
+// LOAD USERS
+async function loadUsers() {
+    const table = document.getElementById("userTable");
+    table.innerHTML = "";
+
+    const res = await fetch(BASE_URL);
+    const data = await res.json();
+
+    data.forEach(user => {
+        const row = `
+            <tr>
+                <td>${user.id}</td>
+                <td>
+                    <input type="text" id="email-${user.id}" value="${user.email}">
+                </td>
+                <td>
+                    <button onclick="updateUser(${user.id})">Update</button>
+                    <button onclick="deleteUser(${user.id})">Delete</button>
+                </td>
+            </tr>
+        `;
+        table.innerHTML += row;
+    });
 }
 
 // REGISTER USER
@@ -10,64 +30,35 @@ async function registerUser(event) {
     event.preventDefault();
 
     const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
 
-    try {
-        const response = await fetch(`${BASE_URL}/users`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
-        });
+    await fetch(BASE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+    });
 
-        const data = await response.json();
-
-        if (data.status === "success") {
-            alert("User registered ✅");
-            loadUsers();
-        } else {
-            alert("Error ❌");
-        }
-
-    } catch (error) {
-        console.error(error);
-    }
+    document.getElementById("email").value = "";
+    loadUsers();
 }
 
+// DELETE USER
+async function deleteUser(id) {
+    await fetch(`${BASE_URL}/${id}`, {
+        method: "DELETE"
+    });
 
-// LOAD USERS
-async function loadUsers() {
-    const table = document.getElementById("userTable");
-
-    if (!table) {
-        console.error("userTable not found ❌");
-        return;
-    }
-
-    table.innerHTML = "";
-
-    try {
-        const response = await fetch(`${BASE_URL}/users`);
-        const data = await response.json();
-
-        data.data.forEach(user => {
-            const row = `
-                <tr>
-                    <td>${user.id}</td>
-                    <td>${user.email}</td>
-                </tr>
-            `;
-            table.innerHTML += row;
-        });
-
-    } catch (error) {
-        console.error("Load error:", error);
-    }
+    loadUsers();
 }
 
-// AUTO LOAD
-window.onload = loadUsers;
+// UPDATE USER ✅
+async function updateUser(id) {
+    const newEmail = document.getElementById(`email-${id}`).value;
+
+    await fetch(`${BASE_URL}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: newEmail })
+    });
+
+    loadUsers();
+}

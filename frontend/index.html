@@ -7,24 +7,16 @@
 
 <h1>IDMS Frontend 🚀</h1>
 
-<!-- LOGIN -->
-<button onclick="login()">Login</button>
 <button onclick="loadUsers()">Load Users</button>
 
-<hr>
-
-<!-- REGISTER -->
-<h2>Register New User</h2>
+<h2>Register User</h2>
 
 <form onsubmit="registerUser(event)">
-    <input type="email" id="email" placeholder="Enter Email" required><br><br>
-    <input type="password" id="password" placeholder="Enter Password" required><br><br>
+    <input type="email" id="email" placeholder="Enter Email" required>
+    <br><br>
     <button type="submit">Register</button>
 </form>
 
-<hr>
-
-<!-- USERS TABLE -->
 <h2>Users List</h2>
 
 <table border="1">
@@ -32,6 +24,7 @@
         <tr>
             <th>ID</th>
             <th>Email</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody id="userTable"></tbody>
