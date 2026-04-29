@@ -1,36 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>IDMS Frontend</title>
+    <title>Login</title>
 </head>
 <body>
 
-<h1>IDMS Frontend 🚀</h1>
+<h2>Login</h2>
 
-<button onclick="loadUsers()">Load Users</button>
+<input type="email" id="email" placeholder="Enter email"><br><br>
+<input type="password" id="password" placeholder="Enter password"><br><br>
 
-<h2>Register User</h2>
+<button onclick="loginUser()">Login</button>
 
-<form onsubmit="registerUser(event)">
-    <input type="email" id="email" placeholder="Enter Email" required>
-    <br><br>
-    <button type="submit">Register</button>
-</form>
+<p>Don't have an account? <a href="register.html">Register</a></p>
 
-<h2>Users List</h2>
+<script>
+async function loginUser() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-<table border="1">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Email</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody id="userTable"></tbody>
-</table>
+    const res = await fetch("http://127.0.0.1:5000/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, password })
+    });
 
-<script src="js/app.js"></script>
+    const data = await res.json();
+
+    if (data.message) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        alert("Login success");
+        window.location.href = "dashboard.html";
+    } else {
+        alert(data.error);
+    }
+}
+</script>
 
 </body>
 </html>

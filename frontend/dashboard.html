@@ -5,15 +5,29 @@
 </head>
 <body>
 
-<h1>Dashboard</h1>
+<h2>Dashboard</h2>
 
-<button onclick="loadUsers()">Load Users</button>
+<div id="userInfo"></div>
 
-<table border="1">
-    <tbody id="userTable"></tbody>
-</table>
+<button onclick="logout()">Logout</button>
 
-<script src="js/app.js"></script>
+<script>
+const user = JSON.parse(localStorage.getItem("user"));
+
+if (!user) {
+    alert("Please login first");
+    window.location.href = "index.html";
+} else {
+    document.getElementById("userInfo").innerHTML =
+        `<h3>Welcome ${user.name}</h3>
+         <p>Email: ${user.email}</p>`;
+}
+
+function logout() {
+    localStorage.removeItem("user");
+    window.location.href = "index.html";
+}
+</script>
 
 </body>
 </html>

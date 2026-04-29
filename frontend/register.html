@@ -5,39 +5,39 @@
 </head>
 <body>
 
-<h2>User Registration</h2>
+<h2>Register</h2>
 
-<form id="registerForm">
-    <input type="text" id="name" placeholder="Name" required><br><br>
-    <input type="email" id="email" placeholder="Email" required><br><br>
-    <input type="password" id="password" placeholder="Password" required><br><br>
+<input type="text" id="name" placeholder="Enter name"><br><br>
+<input type="email" id="email" placeholder="Enter email"><br><br>
+<input type="password" id="password" placeholder="Enter password"><br><br>
 
-    <button type="submit">Register</button>
-</form>
+<button onclick="registerUser()">Register</button>
 
-<p id="result"></p>
+<p>Already have an account? <a href="index.html">Login</a></p>
 
 <script>
-document.getElementById("registerForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
+async function registerUser() {
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-    const data = {
-        name: document.getElementById("name").value,
-        email: document.getElementById("email").value,
-        password: document.getElementById("password").value
-    };
-
-    const response = await fetch("http://127.0.0.1:5000/register", {
+    const res = await fetch("http://127.0.0.1:5000/register", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ name, email, password })
     });
 
-    const result = await response.json();
-    document.getElementById("result").innerText = result.message;
-});
+    const data = await res.json();
+
+    if (data.message) {
+        alert("Registered successfully");
+        window.location.href = "index.html";
+    } else {
+        alert(data.error);
+    }
+}
 </script>
 
 </body>
