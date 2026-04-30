@@ -1,42 +1,63 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Register</title>
+<title>Register</title>
+<style>
+body {
+    background: linear-gradient(135deg,#36b9cc,#f6c23e);
+    height: 100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-family: Arial;
+}
+.card {
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    width:300px;
+    text-align:center;
+}
+input {
+    width:90%;
+    padding:10px;
+    margin:10px;
+}
+button {
+    width:95%;
+    padding:10px;
+    background:#36b9cc;
+    color:white;
+    border:none;
+}
+</style>
 </head>
-<body>
 
+<body>
+<div class="card">
 <h2>Register</h2>
 
-<input type="text" id="name" placeholder="Enter name"><br><br>
-<input type="email" id="email" placeholder="Enter email"><br><br>
-<input type="password" id="password" placeholder="Enter password"><br><br>
+<input type="email" id="email" placeholder="Email">
+<input type="password" id="password" placeholder="Password">
 
 <button onclick="registerUser()">Register</button>
 
-<p>Already have an account? <a href="index.html">Login</a></p>
+<p><a href="login.html">Back to Login</a></p>
+</div>
 
 <script>
 async function registerUser() {
-    const name = document.getElementById("name").value;
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
-    const res = await fetch("http://127.0.0.1:5000/register", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ name, email, password })
+    const res = await fetch("http://127.0.0.1:5000/api/v1/auth/register", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({email,password})
     });
 
     const data = await res.json();
-
-    if (data.message) {
-        alert("Registered successfully");
-        window.location.href = "index.html";
-    } else {
-        alert(data.error);
-    }
+    alert(data.message);
 }
 </script>
 

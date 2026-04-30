@@ -1,31 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard</title>
+<title>Dashboard</title>
+<style>
+body {
+    font-family: Arial;
+    background:#f8f9fc;
+}
+.header {
+    background:#4e73df;
+    color:white;
+    padding:15px;
+    display:flex;
+    justify-content:space-between;
+}
+.container {
+    padding:20px;
+}
+.card {
+    background:white;
+    padding:20px;
+    margin:10px;
+    border-radius:10px;
+    display:inline-block;
+    width:200px;
+}
+button {
+    padding:8px 12px;
+}
+</style>
 </head>
+
 <body>
 
-<h2>Dashboard</h2>
+<script>
+if (localStorage.getItem("login") !== "true") {
+    window.location.href = "login.html";
+}
+</script>
 
-<div id="userInfo"></div>
-
+<div class="header">
+<h2>IDMS Dashboard</h2>
 <button onclick="logout()">Logout</button>
+</div>
+
+<div class="container">
+<div class="card">Members: 100</div>
+<div class="card">Documents: 50</div>
+<div class="card">Meetings: 12</div>
+</div>
 
 <script>
-const user = JSON.parse(localStorage.getItem("user"));
-
-if (!user) {
-    alert("Please login first");
-    window.location.href = "index.html";
-} else {
-    document.getElementById("userInfo").innerHTML =
-        `<h3>Welcome ${user.name}</h3>
-         <p>Email: ${user.email}</p>`;
-}
-
 function logout() {
-    localStorage.removeItem("user");
-    window.location.href = "index.html";
+    localStorage.removeItem("login");
+    window.location.href = "login.html";
 }
 </script>
 
