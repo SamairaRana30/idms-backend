@@ -1,61 +1,20 @@
 <!DOCTYPE html>
 <html>
-<head>
-<title>Dashboard</title>
-<style>
-body {
-    font-family: Arial;
-    background:#f8f9fc;
-}
-.header {
-    background:#4e73df;
-    color:white;
-    padding:15px;
-    display:flex;
-    justify-content:space-between;
-}
-.container {
-    padding:20px;
-}
-.card {
-    background:white;
-    padding:20px;
-    margin:10px;
-    border-radius:10px;
-    display:inline-block;
-    width:200px;
-}
-button {
-    padding:8px 12px;
-}
-</style>
-</head>
+<head><head>
 
-<body>
+<div class="card">
+  <h2 id="welcome"></h2>
+  <p class="subtitle">You’re inside the system 🚀</p>
 
-<script>
-if (localStorage.getItem("login") !== "true") {
-    window.location.href = "login.html";
-}
-</script>
-
-<div class="header">
-<h2>IDMS Dashboard</h2>
-<button onclick="logout()">Logout</button>
+  <button class="btn" onclick="logout()">Logout</button>
 </div>
 
-<div class="container">
-<div class="card">Members: 100</div>
-<div class="card">Documents: 50</div>
-<div class="card">Meetings: 12</div>
-</div>
-
-<script>
-function logout() {
-    localStorage.removeItem("login");
-    window.location.href = "login.html";
-}
-</script>
-
+/frontend/js/dashboard.js
 </body>
 </html>
+  <title>IDMS | Dashboard</title>
+  /frontend/css/fancy.css
+</head>
+<body>
+
+<div class="bg-circle one"></div>

@@ -1,65 +1,51 @@
 <!DOCTYPE html>
 <html>
-<head>
-<title>Register</title>
-<style>
-body {
-    background: linear-gradient(135deg,#36b9cc,#f6c23e);
-    height: 100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    font-family: Arial;
-}
-.card {
-    background:white;
-    padding:30px;
-    border-radius:12px;
-    width:300px;
-    text-align:center;
-}
-input {
-    width:90%;
-    padding:10px;
-    margin:10px;
-}
-button {
-    width:95%;
-    padding:10px;
-    background:#36b9cc;
-    color:white;
-    border:none;
-}
-</style>
-</head>
+<head><head>
 
-<body>
-<div class="card">
-<h2>Register</h2>
+    <div class="input-group">
+      <label>Email</label>
+      <input id="email" placeholder="example@email.com">
+    </div>
 
-<input type="email" id="email" placeholder="Email">
-<input type="password" id="password" placeholder="Password">
+    <div class="input-group">
+      <label>Password</label>
+      <input id="password" type="password" placeholder="••••••">
+    </div>
 
-<button onclick="registerUser()">Register</button>
+    <div class="input-group">
+      <label>Confirm Password</label>
+      <input id="confirmPassword" type="password" placeholder="••••••">
+    </div>
 
-<p><a href="login.html">Back to Login</a></p>
+    <button class="btn">Register</button>
+    <p id="message" class="message"></p>
+
+  </form>
+
+  <div class="link">
+    Already registered?
+    /frontend/login.htmlLogin</a>
+  </div>
 </div>
 
-<script>
-async function registerUser() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    const res = await fetch("http://127.0.0.1:5000/api/v1/auth/register", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({email,password})
-    });
-
-    const data = await res.json();
-    alert(data.message);
-}
-</script>
-
+/frontend/js/register.js
 </body>
 </html>
+``
+  <title>IDMS | Register</title>
+  /frontend/css/fancy.css
+</head>
+<body>
+
+<div class="bg-circle one"></div>
+<div class="bg-circle two"></div>
+
+<div class="card">
+  <h2>Create Account</h2>
+  <p class="subtitle">Start your digital journey ✨</p>
+
+  <form id="registerForm">
+
+    <div class="input-group">
+      <label>Full Name</label>
+      <input id="name" placeholder="John Doe">
