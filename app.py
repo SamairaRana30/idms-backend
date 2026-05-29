@@ -12,11 +12,15 @@ from psycopg2.extras import RealDictCursor
 from psycopg2 import IntegrityError
 from dotenv import load_dotenv
 
+# Load environment variables from .env
 load_dotenv()
+
+print("Loaded DEV_DATABASE_URL:", os.getenv("DEV_DATABASE_URL"))
 
 app = Flask(__name__)
 CORS(app)
 
+# JWT secret
 jwt_secret = os.getenv('JWT_SECRET')
 if not jwt_secret:
     raise Exception("JWT_SECRET environment variable not set")
@@ -24,13 +28,14 @@ app.config['JWT_SECRET'] = jwt_secret
 
 
 def get_db_connection():
-    """Get a database connection using the Session Pooler URL."""
+    """Get a database connection using DEV_DATABASE_URL and set schema."""
     database_url = os.getenv('DEV_DATABASE_URL')
     if not database_url:
         raise Exception("DEV_DATABASE_URL environment variable not set")
 
     conn = psycopg2.connect(database_url)
 
+    # Ensure we are in the correct schema
     with conn.cursor() as cur:
         cur.execute("SET search_path TO idms_dev")
     conn.commit()
@@ -74,9 +79,8 @@ def home():
 def health_check():
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT 1")
-        cur.close()
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")
         conn.close()
         db_status = 'connected'
     except Exception as e:
@@ -95,6 +99,7 @@ def init_test_data():
     if os.getenv("ENV", "development") != "development":
         return jsonify({'success': False, 'error': 'Not allowed outside development'}), 403
 
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -122,10 +127,12 @@ def init_test_data():
         return jsonify({'success': True, 'message': message})
 
     except Exception as e:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
+        if conn:
+            try:
+                conn.rollback()
+                conn.close()
+            except Exception:
+                pass
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -186,6 +193,7 @@ def register():
     if not email or not password:
         return jsonify({'success': False, 'error': 'Email and password required'}), 400
 
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -204,16 +212,20 @@ def register():
 
         return jsonify({'success': True, 'message': 'User created', 'user_id': user_id}), 201
     except IntegrityError:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
+        if conn:
+            try:
+                conn.rollback()
+                conn.close()
+            except Exception:
+                pass
         return jsonify({'success': False, 'error': 'Email already exists'}), 409
     except Exception as e:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
+        if conn:
+            try:
+                conn.rollback()
+                conn.close()
+            except Exception:
+                pass
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -237,4 +249,3 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', debug=False, port=port)
 
-    
