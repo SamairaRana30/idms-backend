@@ -1,55 +1,102 @@
-body {
-    font-family: Arial, sans-serif;
-    background: #f0f2f5;
+* {
     margin: 0;
-    padding: 40px;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #4f46e5, #9333ea);
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
 }
 
-h1 {
-    margin-bottom: 20px;
+.card {
+    background: #ffffff;
+    width: 420px;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 25px 40px rgba(0,0,0,0.2);
+    animation: fadeIn 0.6s;
 }
 
-form {
-    background: white;
-    padding: 20px;
-    width: 320px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
+h2 {
+    text-align: center;
+    margin-bottom: 8px;
 }
 
-input {
-    width: 100%;
-    padding: 10px;
-    margin: 8px 0 15px 0;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+.subtitle {
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 24px;
 }
 
-button {
+.input-group {
+    margin-bottom: 18px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 6px;
+    color: #374151;
+}
+
+.input-group input {
     width: 100%;
     padding: 12px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 15px;
-}
-
-button:hover {
-    background: #0056b3;
-}
-
-#responseMsg {
-    margin-top: 20px;
-    padding: 15px;
-    background: #222;
-    color: #0f0;
-    width: 320px;
     border-radius: 8px;
-    white-space: pre-wrap;
+    border: 1px solid #d1d5db;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.btn {
+    width: 100%;
+    padding: 13px;
+    background: #6366f1;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background: #4f46e5;
+}
+
+.message {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+.link {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 14px;
+}
+
+.link a {
+    color: #6366f1;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

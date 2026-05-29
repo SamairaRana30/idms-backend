@@ -1,135 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - IDMS</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+<html>
+<head><head>
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">Register</h3>
-                </div>
-                <div class="card-body">
-                    <form id="registerForm">
-                        <div class="mb-3">
-                            <label class="form-label">Email Address</label>
-                            <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Password</label>
-                            <input type="password" id="password" class="form-control" placeholder="Password (min 6 characters)" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Confirm Password</label>
-                            <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm password" required>
-                        </div>
-
-                        <button type="submit" id="registerBtn" class="btn btn-primary w-100">Register</button>
-                    </form>
-
-                    <div id="message" class="mt-3"></div>
-                    <a href="index.html" class="btn btn-link mt-2 d-block text-center">Back to Home</a>
-                </div>
-            </div>
-        </div>
+    <div class="input-group">
+      <label>Email</label>
+      <input id="email" placeholder="example@email.com">
     </div>
+
+    <div class="input-group">
+      <label>Password</label>
+      <input id="password" type="password" placeholder="••••••">
+    </div>
+
+    <div class="input-group">
+      <label>Confirm Password</label>
+      <input id="confirmPassword" type="password" placeholder="••••••">
+    </div>
+
+    <button class="btn">Register</button>
+    <p id="message" class="message"></p>
+
+  </form>
+
+  <div class="link">
+    Already registered?
+    /frontend/login.htmlLogin</a>
+  </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-    // Simple JavaScript without module imports for testing
-    console.log("Page loaded!");
-    
-    const form = document.getElementById('registerForm');
-    const messageDiv = document.getElementById('message');
-    
-    form.addEventListener('submit', function(event) {
-        event.preventDefault();
-        
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-        
-        console.log("Form submitted!", { email, passwordLength: password.length });
-        
-        // Clear previous message
-        messageDiv.innerHTML = '';
-        
-        // Simple validation
-        if (!email || !password || !confirmPassword) {
-            messageDiv.innerHTML = '<div class="alert alert-danger">Please fill all fields</div>';
-            return;
-        }
-        
-        if (password.length < 6) {
-            messageDiv.innerHTML = '<div class="alert alert-danger">Password must be at least 6 characters</div>';
-            return;
-        }
-        
-        if (password !== confirmPassword) {
-            messageDiv.innerHTML = '<div class="alert alert-danger">Passwords do not match</div>';
-            return;
-        }
-        
-        if (!email.includes('@') || !email.includes('.')) {
-            messageDiv.innerHTML = '<div class="alert alert-danger">Please enter a valid email address</div>';
-            return;
-        }
-        
-        // Show loading
-        messageDiv.innerHTML = '<div class="alert alert-info">Registering...</div>';
-        
-        // Call the API
-        fetch('https://idms-backend-deu6.onrender.com/api/v1/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log("API Response:", data);
-            
-            if (data.success === true || data.user || data.id || data.token) {
-                messageDiv.innerHTML = '<div class="alert alert-success">✅ Registration successful! Redirecting to login...</div>';
-                
-                // Store email for convenience
-                localStorage.setItem('registered_email', email);
-                
-                // Redirect after 2 seconds
-                setTimeout(() => {
-                    window.location.href = "login.html";
-                }, 2000);
-            } else {
-                const errorMsg = data.message || data.error || "Registration failed";
-                messageDiv.innerHTML = `<div class="alert alert-danger">❌ Registration failed: ${errorMsg}</div>`;
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            messageDiv.innerHTML = `<div class="alert alert-danger">❌ Error: ${error.message}. Please check your connection.</div>`;
-        });
-    });
-    
-    // Test if button works
-    const btn = document.getElementById('registerBtn');
-    btn.addEventListener('click', function() {
-        console.log("Button was clicked!");
-    });
-</script>
-
+/frontend/js/register.js
 </body>
 </html>
+``
+  <title>IDMS | Register</title>
+  /frontend/css/fancy.css
+</head>
+<body>
+
+<div class="bg-circle one"></div>
+<div class="bg-circle two"></div>
+
+<div class="card">
+  <h2>Create Account</h2>
+  <p class="subtitle">Start your digital journey ✨</p>
+
+  <form id="registerForm">
+
+    <div class="input-group">
+      <label>Full Name</label>
+      <input id="name" placeholder="John Doe">
