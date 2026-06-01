@@ -4,7 +4,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    JWT_SECRET = os.getenv('JWT_SECRET')
+    JWT_SECRET     = os.getenv('JWT_SECRET')
+    SUPABASE_URL   = os.getenv('SUPABASE_URL')
+    SUPABASE_KEY   = os.getenv('SUPABASE_KEY')
     ENV = os.getenv('ENV', 'development')
     ALLOWED_ORIGINS = os.getenv(
         'ALLOWED_ORIGINS',
