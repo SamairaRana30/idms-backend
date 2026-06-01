@@ -27,7 +27,7 @@ def get_audit_logs():
                       u.full_name AS performed_by_name,
                       u.email     AS performed_by_email
                FROM audit_logs al
-               LEFT JOIN users u ON u.id = al.performed_by
+               LEFT JOIN users u ON u.id::text = al.performed_by
                ORDER BY al.created_at DESC
                LIMIT %s OFFSET %s""",
             (limit, offset)
