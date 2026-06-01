@@ -14,6 +14,8 @@ from blueprints.finances      import finances_bp
 from blueprints.analytics     import analytics_bp
 from blueprints.audit         import audit_bp
 
+FRONTEND = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend')
+
 
 def create_app():
     if not Config.JWT_SECRET:
@@ -24,30 +26,27 @@ def create_app():
 
     CORS(app, resources={r"/api/*": {"origins": Config.ALLOWED_ORIGINS}})
 
-    blueprints = [
-        auth_bp, users_bp, migration_bp, documents_bp,
-        voting_bp, meetings_bp, notifications_bp, finances_bp, analytics_bp, audit_bp
-    ]
-    for bp in blueprints:
+    for bp in [auth_bp, users_bp, migration_bp, documents_bp,
+               voting_bp, meetings_bp, notifications_bp,
+               finances_bp, analytics_bp, audit_bp]:
         app.register_blueprint(bp)
-
-    @app.route('/frontend/<path:filename>')
-    def frontend(filename):
-        return send_from_directory('frontend', filename)
-
-    @app.route('/')
-    def home():
-        return jsonify({
-            'message': 'IDMS API is running!',
-            'version': '2.0.0',
-            'environment': Config.ENV,
-            'docs': '/api/v1/health'
-        })
 
     return app
 
 
 app = create_app()
+
+
+@app.route('/frontend/')
+@app.route('/frontend/<path:filename>')
+def frontend(filename='index.html'):
+    return send_from_directory(FRONTEND, filename)
+
+
+@app.route('/')
+def home():
+    return send_from_directory(FRONTEND, 'index.html')
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
