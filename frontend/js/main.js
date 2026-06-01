@@ -1,7 +1,5 @@
 // Shared auth + sidebar logic — included on every protected page
 
-const API = '/api/v1';
-
 function getToken()    { return localStorage.getItem('token'); }
 function getUserName() { return localStorage.getItem('userName'); }
 function getRole()     { return localStorage.getItem('role'); }
