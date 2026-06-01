@@ -5,7 +5,7 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, send_from_directory
 from flask_cors import CORS
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -57,6 +57,11 @@ def token_required(f):
             return jsonify({'success': False, 'error': f'Invalid token: {str(e)}'}), 401
         return f(*args, **kwargs)
     return decorated
+
+
+@app.route('/frontend/<path:filename>')
+def frontend(filename):
+    return send_from_directory('frontend', filename)
 
 
 @app.route('/', methods=['GET'])

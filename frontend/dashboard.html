@@ -5,17 +5,71 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IDMS | Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/frontend/css/fancy.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
 </head>
 <body>
-  <div class="bg-circle one"></div>
-  <div class="bg-circle two"></div>
 
-  <div class="card">
-    <h2 id="welcome"></h2>
-    <p class="subtitle">You're inside the system 🚀</p>
-    <button class="btn" onclick="logout()">Logout</button>
+  <div class="sidebar">
+    <div class="sidebar-logo">IDMS</div>
+    <nav>
+      <a href="#" class="nav-item active">Dashboard</a>
+      <a href="#" class="nav-item" id="usersNavItem" style="display:none">Users</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="avatar" id="avatarInitial"></div>
+        <div>
+          <div class="user-email" id="sidebarEmail"></div>
+          <div class="user-role" id="sidebarRole"></div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <h1 id="welcome"></h1>
+    </div>
+
+    <div class="stats-grid" id="statsGrid" style="display:none">
+      <div class="stat-card">
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value" id="statTotal">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Users</div>
+        <div class="stat-value" id="statActive">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Admins</div>
+        <div class="stat-value" id="statAdmins">—</div>
+      </div>
+    </div>
+
+    <div class="card" id="profileCard">
+      <h2 class="card-title">My Profile</h2>
+      <div class="profile-row"><span class="profile-label">Email</span><span id="profileEmail">—</span></div>
+      <div class="profile-row"><span class="profile-label">Role</span><span id="profileRole">—</span></div>
+    </div>
+
+    <div class="card" id="usersCard" style="display:none">
+      <h2 class="card-title">All Users</h2>
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody">
+          <tr><td colspan="4" style="text-align:center">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <script src="/frontend/js/dashboard.js"></script>
