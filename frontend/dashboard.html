@@ -6,6 +6,7 @@
   <title>IDMS | Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/frontend/css/dashboard.css">
 </head>
 <body>
@@ -13,15 +14,21 @@
   <div class="sidebar">
     <div class="sidebar-logo">IDMS</div>
     <nav>
-      <a href="#" class="nav-item active">Dashboard</a>
-      <a href="#" class="nav-item" id="usersNavItem" style="display:none">Users</a>
+      <a href="/frontend/dashboard.html"      class="nav-item">Dashboard</a>
+      <a href="/frontend/members.html"        class="nav-item admin-only" style="display:none">Members</a>
+      <a href="/frontend/documents.html"      class="nav-item">Documents</a>
+      <a href="/frontend/voting.html"         class="nav-item">Voting</a>
+      <a href="/frontend/meetings.html"       class="nav-item">Meetings</a>
+      <a href="/frontend/finances.html"       class="nav-item">Finances</a>
+      <a href="/frontend/notifications.html"  class="nav-item">Notifications</a>
+      <a href="/frontend/analytics.html"      class="nav-item admin-only" style="display:none">Analytics</a>
     </nav>
     <div class="sidebar-footer">
       <div class="user-info">
         <div class="avatar" id="avatarInitial"></div>
         <div>
           <div class="user-email" id="sidebarEmail"></div>
-          <div class="user-role" id="sidebarRole"></div>
+          <div class="user-role"  id="sidebarRole"></div>
         </div>
       </div>
       <button class="logout-btn" onclick="logout()">Logout</button>
@@ -35,11 +42,11 @@
 
     <div class="stats-grid" id="statsGrid" style="display:none">
       <div class="stat-card">
-        <div class="stat-label">Total Users</div>
+        <div class="stat-label">Total Members</div>
         <div class="stat-value" id="statTotal">—</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Active Users</div>
+        <div class="stat-label">Active Members</div>
         <div class="stat-value" id="statActive">—</div>
       </div>
       <div class="stat-card">
@@ -50,28 +57,26 @@
 
     <div class="card" id="profileCard">
       <h2 class="card-title">My Profile</h2>
+      <div class="profile-row"><span class="profile-label">Name</span><span id="profileName">—</span></div>
       <div class="profile-row"><span class="profile-label">Email</span><span id="profileEmail">—</span></div>
       <div class="profile-row"><span class="profile-label">Role</span><span id="profileRole">—</span></div>
     </div>
 
     <div class="card" id="usersCard" style="display:none">
-      <h2 class="card-title">All Users</h2>
+      <h2 class="card-title">All Members</h2>
       <table class="users-table">
         <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-          </tr>
+          <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr>
         </thead>
         <tbody id="usersTableBody">
-          <tr><td colspan="4" style="text-align:center">Loading...</td></tr>
+          <tr><td colspan="4" class="text-center text-muted py-3">Loading...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/main.js"></script>
   <script src="/frontend/js/dashboard.js"></script>
 </body>
 </html>

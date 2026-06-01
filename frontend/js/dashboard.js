@@ -1,57 +1,34 @@
-const token = localStorage.getItem("token");
-const userName = localStorage.getItem("userName");
-const role = localStorage.getItem("role");
+// dashboard.js — runs after api.js and main.js are loaded
 
-if (!token) {
-  window.location.href = "/frontend/login.html";
-}
+document.getElementById('welcome').innerText = `Welcome back, ${getUserName() || 'User'}!`;
 
-// Populate welcome and sidebar
-document.getElementById("welcome").innerText = `Welcome back, ${userName || "User"}!`;
-document.getElementById("sidebarEmail").innerText = userName || "";
-document.getElementById("sidebarRole").innerText = role || "user";
-document.getElementById("avatarInitial").innerText = (userName || "U")[0].toUpperCase();
+const nameEl  = document.getElementById('profileName');
+const emailEl = document.getElementById('profileEmail');
+const roleEl  = document.getElementById('profileRole');
 
-// Profile card
-document.getElementById("profileEmail").innerText = userName || "—";
-document.getElementById("profileRole").innerText = role || "—";
+if (nameEl)  nameEl.innerText  = getUserName() || '—';
+if (emailEl) emailEl.innerText = localStorage.getItem('userEmail') || '—';
+if (roleEl)  roleEl.innerText  = getRole() || '—';
 
-// Load users if admin
-if (role === "admin") {
-  document.getElementById("usersNavItem").style.display = "block";
-  document.getElementById("usersCard").style.display = "block";
-  document.getElementById("statsGrid").style.display = "grid";
+if (getRole() === 'admin') {
+  document.getElementById('usersCard').style.display  = 'block';
+  document.getElementById('statsGrid').style.display  = 'grid';
 
-  fetch("/api/v1/users", {
-    headers: { "Authorization": `Bearer ${token}` }
-  })
-  .then(res => res.json())
-  .then(data => {
+  apiGetUsers().then(data => {
     if (!data.success) return;
-
     const users = data.users;
 
-    document.getElementById("statTotal").innerText = users.length;
-    document.getElementById("statActive").innerText = users.filter(u => u.is_active).length;
-    document.getElementById("statAdmins").innerText = users.filter(u => u.role === "admin").length;
+    document.getElementById('statTotal').innerText   = users.length;
+    document.getElementById('statActive').innerText  = users.filter(u => u.is_active).length;
+    document.getElementById('statAdmins').innerText  = users.filter(u => u.role === 'admin').length;
 
-    const tbody = document.getElementById("usersTableBody");
-    tbody.innerHTML = users.map(u => `
+    document.getElementById('usersTableBody').innerHTML = users.map(u => `
       <tr>
         <td>${u.full_name || '—'}</td>
         <td>${u.email}</td>
         <td><span class="badge badge-${u.role}">${u.role}</span></td>
         <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
       </tr>
-    `).join("");
-  })
-  .catch(() => {
-    document.getElementById("usersTableBody").innerHTML =
-      '<tr><td colspan="4" style="text-align:center;color:red">Failed to load users</td></tr>';
+    `).join('');
   });
-}
-
-function logout() {
-  localStorage.clear();
-  window.location.href = "/frontend/login.html";
 }

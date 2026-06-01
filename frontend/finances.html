@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDMS | Finances</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+</head>
+<body>
+
+  <div class="sidebar">
+    <div class="sidebar-logo">IDMS</div>
+    <nav>
+      <a href="/frontend/dashboard.html"      class="nav-item">Dashboard</a>
+      <a href="/frontend/members.html"        class="nav-item admin-only">Members</a>
+      <a href="/frontend/documents.html"      class="nav-item">Documents</a>
+      <a href="/frontend/voting.html"         class="nav-item">Voting</a>
+      <a href="/frontend/meetings.html"       class="nav-item">Meetings</a>
+      <a href="/frontend/finances.html"       class="nav-item">Finances</a>
+      <a href="/frontend/notifications.html"  class="nav-item">Notifications</a>
+      <a href="/frontend/analytics.html"      class="nav-item admin-only">Analytics</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="avatar" id="avatarInitial"></div>
+        <div>
+          <div class="user-email" id="sidebarEmail"></div>
+          <div class="user-role"  id="sidebarRole"></div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar d-flex justify-content-between align-items-center">
+      <h1>Finances</h1>
+      <button class="btn btn-primary btn-sm admin-only" style="display:none"
+              data-bs-toggle="modal" data-bs-target="#financeModal">+ Add Record</button>
+    </div>
+
+    <div class="stats-grid" id="summaryGrid">
+      <div class="stat-card">
+        <div class="stat-label">Total Income</div>
+        <div class="stat-value text-success" id="totalIncome">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Expense</div>
+        <div class="stat-value text-danger" id="totalExpense">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Balance</div>
+        <div class="stat-value" id="balance">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Transaction History</h2>
+      <table class="users-table">
+        <thead>
+          <tr><th>Type</th><th>Amount</th><th>Description</th><th>Date</th><th>Recorded By</th><th class="admin-only"></th></tr>
+        </thead>
+        <tbody id="financeTableBody">
+          <tr><td colspan="6" class="text-center text-muted py-4">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add Record Modal -->
+  <div class="modal fade" id="financeModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add Finance Record</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Type</label>
+            <select id="finType" class="form-select">
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Amount (£)</label>
+            <input id="finAmount" type="number" step="0.01" class="form-control" placeholder="0.00">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <input id="finDesc" class="form-control" placeholder="Description">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Transaction Date</label>
+            <input id="finDate" type="date" class="form-control">
+          </div>
+          <p id="finMsg" class="text-danger"></p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" onclick="addRecord()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/main.js"></script>
+  <script>
+    async function loadFinances() {
+      const data = await apiGetFinances();
+      if (!data.success) return;
+
+      const s = data.summary;
+      document.getElementById('totalIncome').innerText  = `£${s.total_income.toFixed(2)}`;
+      document.getElementById('totalExpense').innerText = `£${s.total_expense.toFixed(2)}`;
+      const balanceEl = document.getElementById('balance');
+      balanceEl.innerText = `£${s.balance.toFixed(2)}`;
+      balanceEl.style.color = s.balance >= 0 ? '#16a34a' : '#dc2626';
+
+      const tbody = document.getElementById('financeTableBody');
+      if (!data.records.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No records yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.records.map(r => `
+        <tr>
+          <td><span class="badge ${r.type === 'income' ? 'badge-active' : 'badge-inactive'}">${r.type}</span></td>
+          <td><strong>£${parseFloat(r.amount).toFixed(2)}</strong></td>
+          <td>${r.description || '—'}</td>
+          <td>${new Date(r.transaction_date).toLocaleDateString()}</td>
+          <td>${r.recorded_by_name}</td>
+          <td class="admin-only">
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord('${r.id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+
+      // Show admin delete column header
+      if (getRole() === 'admin') {
+        document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+      }
+    }
+
+    async function addRecord() {
+      const data = await apiAddFinanceRecord({
+        type:             document.getElementById('finType').value,
+        amount:           parseFloat(document.getElementById('finAmount').value),
+        description:      document.getElementById('finDesc').value.trim(),
+        transaction_date: document.getElementById('finDate').value
+      });
+      if (data.success) {
+        bootstrap.Modal.getInstance(document.getElementById('financeModal')).hide();
+        loadFinances();
+      } else {
+        document.getElementById('finMsg').innerText = data.error;
+      }
+    }
+
+    async function deleteRecord(id) {
+      if (!confirm('Delete this record?')) return;
+      const data = await apiDeleteFinanceRecord(id);
+      if (data.success) loadFinances();
+      else alert(data.error);
+    }
+
+    loadFinances();
+  </script>
+</body>
+</html>

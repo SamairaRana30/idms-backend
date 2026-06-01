@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDMS | Meetings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+</head>
+<body>
+
+  <div class="sidebar">
+    <div class="sidebar-logo">IDMS</div>
+    <nav>
+      <a href="/frontend/dashboard.html"      class="nav-item">Dashboard</a>
+      <a href="/frontend/members.html"        class="nav-item admin-only">Members</a>
+      <a href="/frontend/documents.html"      class="nav-item">Documents</a>
+      <a href="/frontend/voting.html"         class="nav-item">Voting</a>
+      <a href="/frontend/meetings.html"       class="nav-item">Meetings</a>
+      <a href="/frontend/finances.html"       class="nav-item">Finances</a>
+      <a href="/frontend/notifications.html"  class="nav-item">Notifications</a>
+      <a href="/frontend/analytics.html"      class="nav-item admin-only">Analytics</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="avatar" id="avatarInitial"></div>
+        <div>
+          <div class="user-email" id="sidebarEmail"></div>
+          <div class="user-role"  id="sidebarRole"></div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar d-flex justify-content-between align-items-center">
+      <h1>Meetings</h1>
+      <button class="btn btn-primary btn-sm admin-only" style="display:none"
+              data-bs-toggle="modal" data-bs-target="#meetingModal">+ Schedule Meeting</button>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Upcoming & Past Meetings</h2>
+      <table class="users-table">
+        <thead>
+          <tr><th>Title</th><th>Date & Time</th><th>Location</th><th>Status</th><th>Agenda</th></tr>
+        </thead>
+        <tbody id="meetingsTableBody">
+          <tr><td colspan="5" class="text-center text-muted py-4">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Create Meeting Modal -->
+  <div class="modal fade" id="meetingModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Schedule Meeting</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input id="meetTitle" class="form-control" placeholder="Meeting title">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Date & Time</label>
+            <input id="meetDate" type="datetime-local" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Location</label>
+            <input id="meetLocation" class="form-control" placeholder="Room / Zoom link">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Agenda</label>
+            <textarea id="meetAgenda" class="form-control" rows="3"></textarea>
+          </div>
+          <p id="meetMsg" class="text-danger"></p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" onclick="scheduleMeeting()">Schedule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/main.js"></script>
+  <script>
+    const statusColors = { scheduled: 'primary', completed: 'success', archived: 'secondary' };
+
+    async function loadMeetings() {
+      const data = await apiGetMeetings();
+      const tbody = document.getElementById('meetingsTableBody');
+      if (!data.success || !data.meetings.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No meetings scheduled</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.meetings.map(m => `
+        <tr>
+          <td><strong>${m.title}</strong></td>
+          <td>${new Date(m.scheduled_at).toLocaleString()}</td>
+          <td>${m.location || '—'}</td>
+          <td><span class="badge bg-${statusColors[m.status]}">${m.status}</span></td>
+          <td style="max-width:200px;white-space:pre-wrap;font-size:12px">${m.agenda || '—'}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function scheduleMeeting() {
+      const data = await apiCreateMeeting({
+        title:        document.getElementById('meetTitle').value.trim(),
+        scheduled_at: document.getElementById('meetDate').value,
+        location:     document.getElementById('meetLocation').value.trim(),
+        agenda:       document.getElementById('meetAgenda').value.trim()
+      });
+      if (data.success) {
+        bootstrap.Modal.getInstance(document.getElementById('meetingModal')).hide();
+        loadMeetings();
+      } else {
+        document.getElementById('meetMsg').innerText = data.error;
+      }
+    }
+
+    loadMeetings();
+  </script>
+</body>
+</html>

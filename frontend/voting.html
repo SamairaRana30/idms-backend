@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDMS | Voting</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+</head>
+<body>
+
+  <div class="sidebar">
+    <div class="sidebar-logo">IDMS</div>
+    <nav>
+      <a href="/frontend/dashboard.html"      class="nav-item">Dashboard</a>
+      <a href="/frontend/members.html"        class="nav-item admin-only">Members</a>
+      <a href="/frontend/documents.html"      class="nav-item">Documents</a>
+      <a href="/frontend/voting.html"         class="nav-item">Voting</a>
+      <a href="/frontend/meetings.html"       class="nav-item">Meetings</a>
+      <a href="/frontend/finances.html"       class="nav-item">Finances</a>
+      <a href="/frontend/notifications.html"  class="nav-item">Notifications</a>
+      <a href="/frontend/analytics.html"      class="nav-item admin-only">Analytics</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="avatar" id="avatarInitial"></div>
+        <div>
+          <div class="user-email" id="sidebarEmail"></div>
+          <div class="user-role"  id="sidebarRole"></div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar d-flex justify-content-between align-items-center">
+      <h1>Voting</h1>
+      <button id="createBallotBtn" class="btn btn-primary btn-sm admin-only" style="display:none"
+              data-bs-toggle="modal" data-bs-target="#ballotModal">+ Create Ballot</button>
+    </div>
+    <div id="ballotsContainer" class="row g-3"></div>
+  </div>
+
+  <!-- Create Ballot Modal -->
+  <div class="modal fade" id="ballotModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Create Ballot</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input id="ballotTitle" class="form-control" placeholder="Ballot title">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea id="ballotDesc" class="form-control" rows="2"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Start Date</label>
+            <input id="ballotStart" type="datetime-local" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">End Date</label>
+            <input id="ballotEnd" type="datetime-local" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Options (one per line)</label>
+            <textarea id="ballotOptions" class="form-control" rows="4" placeholder="Option A&#10;Option B&#10;Option C"></textarea>
+          </div>
+          <p id="ballotMsg" class="text-danger"></p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" onclick="createBallot()">Create</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/main.js"></script>
+  <script>
+    const statusColors = { draft: 'secondary', open: 'success', closed: 'danger' };
+
+    async function loadBallots() {
+      const data = await apiGetBallots();
+      const container = document.getElementById('ballotsContainer');
+      if (!data.success || !data.ballots.length) {
+        container.innerHTML = '<p class="text-muted">No ballots available.</p>';
+        return;
+      }
+      container.innerHTML = data.ballots.map(b => `
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-title d-flex justify-content-between align-items-center">
+              <span>${b.title}</span>
+              <span class="badge bg-${statusColors[b.status]}">${b.status}</span>
+            </div>
+            <p class="text-muted" style="font-size:13px">${b.description || ''}</p>
+            <p style="font-size:12px;color:#888">Created by ${b.created_by_name}</p>
+            <a href="/frontend/voting-detail.html?id=${b.id}" class="btn btn-sm btn-outline-primary mt-2">
+              ${b.status === 'open' ? 'Vote Now' : 'View Results'}
+            </a>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function createBallot() {
+      const options = document.getElementById('ballotOptions').value
+        .split('\n').map(o => o.trim()).filter(Boolean);
+      const data = await apiCreateBallot({
+        title:      document.getElementById('ballotTitle').value.trim(),
+        description:document.getElementById('ballotDesc').value.trim(),
+        start_date: document.getElementById('ballotStart').value,
+        end_date:   document.getElementById('ballotEnd').value,
+        options
+      });
+      if (data.success) {
+        bootstrap.Modal.getInstance(document.getElementById('ballotModal')).hide();
+        loadBallots();
+      } else {
+        document.getElementById('ballotMsg').innerText = data.error;
+      }
+    }
+
+    loadBallots();
+  </script>
+</body>
+</html>

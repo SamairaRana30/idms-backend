@@ -1,35 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    </style.css    <title>IDMS | Login</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDMS</title>
 </head>
 <body>
-
-<div class="card">
-    <h2>Welcome Back</h2>
-    <p class="subtitle">Login to access your dashboard</p>
-
-    <form id="loginForm">
-        <div class="input-group">
-            <label>Email</label>
-            <input id="email" placeholder="example@email.com">
-        </div>
-
-        <div class="input-group">
-            <label>Password</label>
-            <input id="password" type="password" placeholder="Your password">
-        </div>
-
-        <button class="btn">Login</button>
-        <p id="message" class="message"></p>
-    </form>
-
-    <div class="link">
-        Don’t have an account?
-        /frontend/register.htmlRegister</a>
-    </div>
-</div>
-
-/frontend/js/login.js
+  <script>
+    if (localStorage.getItem('token')) {
+      window.location.href = '/frontend/dashboard.html';
+    } else {
+      window.location.href = '/frontend/login.html';
+    }
+  </script>
 </body>
 </html>
