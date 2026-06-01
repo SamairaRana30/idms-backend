@@ -88,7 +88,7 @@ def send_notification():
             "VALUES (%s,%s,%s,%s,%s) RETURNING id",
             (n_type, title, body, g.user['user_id'], target_role)
         )
-        notif_id = str(cur.fetchone()[0])
+        notif_id = str(cur.fetchone()['id'])
 
         # Get matching members for email
         if target_role == 'all':
