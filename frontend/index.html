@@ -69,13 +69,15 @@
           <div class="mb-3">
             <label for="loginEmail">Email address</label>
             <input id="loginEmail" type="email" class="form-control" placeholder="you@example.com" required>
+            <div class="invalid-feedback">Please enter a valid email address.</div>
           </div>
           <div class="mb-3">
             <label for="loginPassword">Password</label>
             <div class="input-group">
-              <input id="loginPassword" type="password" class="form-control" placeholder="Enter your password" required>
+              <input id="loginPassword" type="password" class="form-control" placeholder="Enter your password" required minlength="8">
               <button type="button" class="btn btn-outline-secondary" onclick="togglePw('loginPassword',this)" tabindex="-1">👁️</button>
             </div>
+            <div class="invalid-feedback">Password is required.</div>
           </div>
           <button class="btn btn-primary mt-1" type="submit">Sign In</button>
         </form>
@@ -88,23 +90,27 @@
           <div class="mb-3">
             <label for="regName">Full Name</label>
             <input id="regName" type="text" class="form-control" placeholder="John Doe" required>
+            <div class="invalid-feedback">Full name is required.</div>
           </div>
           <div class="mb-3">
             <label for="regEmail">Email address</label>
             <input id="regEmail" type="email" class="form-control" placeholder="you@example.com" required>
+            <div class="invalid-feedback">Please enter a valid email address.</div>
           </div>
           <div class="mb-3">
             <label for="regPassword">Password</label>
-            <div class="input-group">
-              <input id="regPassword" type="password" class="form-control" placeholder="Min. 8 characters" required>
+            <div class="input-group has-validation">
+              <input id="regPassword" type="password" class="form-control" placeholder="Min. 8 characters" required minlength="8">
               <button type="button" class="btn btn-outline-secondary" onclick="togglePw('regPassword',this)" tabindex="-1">👁️</button>
+              <div class="invalid-feedback">Password must be at least 8 characters.</div>
             </div>
           </div>
           <div class="mb-3">
             <label for="regConfirm">Confirm Password</label>
-            <div class="input-group">
+            <div class="input-group has-validation">
               <input id="regConfirm" type="password" class="form-control" placeholder="Repeat your password" required>
               <button type="button" class="btn btn-outline-secondary" onclick="togglePw('regConfirm',this)" tabindex="-1">👁️</button>
+              <div class="invalid-feedback">Passwords do not match.</div>
             </div>
           </div>
           <button class="btn btn-primary mt-1" type="submit">Create Account</button>
@@ -135,9 +141,12 @@
 
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
+      const form = e.target;
+      form.classList.add('was-validated');
       const email    = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
 
+      if (!form.checkValidity()) return;
       if (!email || !password) {
         return showAlert('loginAlert', 'danger', 'Email and password are required');
       }
@@ -168,20 +177,20 @@
 
     document.getElementById('registerForm').addEventListener('submit', async function(e) {
       e.preventDefault();
+      const form = e.target;
       const full_name = document.getElementById('regName').value.trim();
       const email     = document.getElementById('regEmail').value.trim();
       const password  = document.getElementById('regPassword').value;
       const confirm   = document.getElementById('regConfirm').value;
 
-      if (!full_name || !email || !password || !confirm) {
-        return showAlert('registerAlert', 'danger', 'All fields are required');
-      }
-      if (password.length < 8) {
-        return showAlert('registerAlert', 'danger', 'Password must be at least 8 characters');
-      }
-      if (password !== confirm) {
-        return showAlert('registerAlert', 'danger', 'Passwords do not match');
-      }
+      // Mark invalid fields
+      document.getElementById('regName').classList.toggle('is-invalid', !full_name);
+      document.getElementById('regEmail').classList.toggle('is-invalid', !email);
+      document.getElementById('regPassword').classList.toggle('is-invalid', password.length < 8);
+      document.getElementById('regConfirm').classList.toggle('is-invalid', password !== confirm);
+
+      if (!full_name || !email || password.length < 8 || password !== confirm) return;
+      form.classList.remove('was-validated');
 
       try {
         const res = await fetch('/api/v1/auth/register', {

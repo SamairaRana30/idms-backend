@@ -364,3 +364,68 @@ nav {
   background: #4f46e5 !important;
   color: #fff !important;
 }
+
+/* ── Loading spinner ── */
+.spinner-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* ── Form validation ── */
+.form-control.is-invalid { border-color: #dc2626; }
+.form-control.is-valid   { border-color: #16a34a; }
+.invalid-feedback        { font-size: 12px; color: #dc2626; display: none; }
+.form-control.is-invalid ~ .invalid-feedback { display: block; }
+
+/* ── Mobile responsive ── */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    padding: 16px 12px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sidebar nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .nav-item { padding: 6px 10px; font-size: 12px; }
+
+  .sidebar-footer {
+    border-top: none;
+    border-left: 1px solid rgba(255,255,255,0.15);
+    padding-top: 0;
+    padding-left: 12px;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .main {
+    margin-left: 0;
+    padding: 20px 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .users-table { font-size: 12px; }
+  .users-table th, .users-table td { padding: 10px 10px; }
+
+  .chart-grid-2 { grid-template-columns: 1fr; }
+
+  body { flex-direction: column; }
+}

@@ -41,6 +41,7 @@ async function initDashboard() {
 }
 
 async function loadAdminStats() {
+    showLoading('usersTableBody', 4);
     const res = await apiGetUsers();
     if (!res.success) return;
 
