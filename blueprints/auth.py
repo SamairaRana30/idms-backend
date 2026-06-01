@@ -1,3 +1,4 @@
+import re
 import base64
 import bcrypt
 import jwt
@@ -13,33 +14,39 @@ from utils.helpers import success, error
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/v1/auth')
 
+_EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json() or {}
     full_name = data.get('full_name', '').strip()
-    email     = data.get('email', '').strip()
+    email     = data.get('email', '').strip().lower()
     password  = data.get('password', '')
 
     if not full_name or not email or not password:
         return error('Full name, email, and password are required', 400)
+    if not _EMAIL_RE.match(email):
+        return error('Invalid email format', 400)
+    if len(password) < 8:
+        return error('Password must be at least 8 characters', 400)
 
     conn = cur = None
     try:
         conn = get_db()
         cur = conn.cursor()
 
-        hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt(10))
+        hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt(12))
         hashed_b64 = base64.b64encode(hashed).decode()
 
         cur.execute(
             """INSERT INTO users (full_name, email, password_hash, role)
-               VALUES (%s, %s, %s, 'member') RETURNING id""",
+               VALUES (%s, %s, %s, 'member') RETURNING id, email, role""",
             (full_name, email, hashed_b64)
         )
-        user_id = str(cur.fetchone()[0])
+        row = cur.fetchone()
         conn.commit()
-        return success({'user_id': user_id}, 201)
+        return success({'user_id': str(row[0]), 'email': row[1], 'role': row[2]}, 201)
 
     except IntegrityError:
         if conn:

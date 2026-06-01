@@ -9,7 +9,7 @@ function getUserId()   { return localStorage.getItem('userId'); }
 
 function requireAuth() {
   if (!getToken()) {
-    window.location.href = '/frontend/login.html';
+    window.location.href = '/frontend/index.html';
     return false;
   }
   return true;
@@ -17,7 +17,7 @@ function requireAuth() {
 
 function logout() {
   localStorage.clear();
-  window.location.href = '/frontend/login.html';
+  window.location.href = '/frontend/index.html';
 }
 
 function authHeaders() {
