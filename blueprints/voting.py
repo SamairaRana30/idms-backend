@@ -1,28 +1,34 @@
 from flask import Blueprint, request, g
 from psycopg2.extras import RealDictCursor
 
-from middleware.auth import token_required, admin_required
+from middleware.auth import require_auth, require_admin
 from utils.supabase_client import get_db, close_db
-from utils.helpers import success, error
+from utils.helpers import success, error, paginate
 
 voting_bp = Blueprint('voting', __name__, url_prefix='/api/v1/voting')
 
 
 @voting_bp.route('/ballots', methods=['GET'])
-@token_required
+@require_auth
 def list_ballots():
+    page, limit, offset = paginate(request)
     conn = cur = None
     try:
         conn = get_db()
         cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        cur.execute("SELECT COUNT(*) FROM ballots")
+        total = cur.fetchone()['count']
+
         cur.execute(
-            """SELECT b.id, b.title, b.description, b.status, b.start_date, b.end_date, b.created_at,
-                      u.full_name AS created_by_name
+            """SELECT b.id, b.title, b.description, b.status, b.start_date,
+                      b.end_date, b.created_at, u.full_name AS created_by_name
                FROM ballots b JOIN users u ON u.id = b.created_by
-               ORDER BY b.created_at DESC"""
+               ORDER BY b.created_at DESC LIMIT %s OFFSET %s""",
+            (limit, offset)
         )
         ballots = [dict(r) | {'id': str(r['id'])} for r in cur.fetchall()]
-        return success({'ballots': ballots})
+        return success({'ballots': ballots, 'total': total, 'page': page})
     except Exception as e:
         return error(str(e), 500)
     finally:
@@ -30,15 +36,15 @@ def list_ballots():
 
 
 @voting_bp.route('/ballots', methods=['POST'])
-@token_required
-@admin_required
+@require_auth
+@require_admin
 def create_ballot():
     data = request.get_json() or {}
-    title      = data.get('title', '').strip()
-    description= data.get('description', '')
-    start_date = data.get('start_date')
-    end_date   = data.get('end_date')
-    options    = data.get('options', [])
+    title       = data.get('title', '').strip()
+    description = data.get('description', '')
+    start_date  = data.get('start_date')
+    end_date    = data.get('end_date')
+    options     = data.get('options', [])
 
     if not title or not options:
         return error('Title and at least one option are required', 400)
@@ -59,7 +65,7 @@ def create_ballot():
                 (ballot_id, opt.strip())
             )
         conn.commit()
-        return success({'ballot_id': str(ballot_id)}, message='Ballot created', status=201)
+        return success({'ballot_id': str(ballot_id)}, 201)
     except Exception as e:
         if conn:
             conn.rollback()
@@ -69,7 +75,7 @@ def create_ballot():
 
 
 @voting_bp.route('/ballots/<ballot_id>', methods=['GET'])
-@token_required
+@require_auth
 def get_ballot(ballot_id):
     conn = cur = None
     try:
@@ -96,10 +102,10 @@ def get_ballot(ballot_id):
         has_voted = cur.fetchone() is not None
 
         return success({
-            'ballot': dict(ballot) | {'id': str(ballot['id'])},
-            'options': options,
+            'ballot':      dict(ballot) | {'id': str(ballot['id'])},
+            'options':     options,
             'vote_counts': counts,
-            'has_voted': has_voted
+            'has_voted':   has_voted
         })
     except Exception as e:
         return error(str(e), 500)
@@ -108,7 +114,7 @@ def get_ballot(ballot_id):
 
 
 @voting_bp.route('/ballots/<ballot_id>/vote', methods=['POST'])
-@token_required
+@require_auth
 def cast_vote(ballot_id):
     data = request.get_json() or {}
     option_id = data.get('option_id')
@@ -131,7 +137,7 @@ def cast_vote(ballot_id):
             (ballot_id, g.user['user_id'], option_id)
         )
         conn.commit()
-        return success(message='Vote recorded')
+        return success({'message': 'Vote recorded'})
     except Exception as e:
         if conn:
             conn.rollback()
@@ -143,8 +149,8 @@ def cast_vote(ballot_id):
 
 
 @voting_bp.route('/ballots/<ballot_id>/status', methods=['PATCH'])
-@token_required
-@admin_required
+@require_auth
+@require_admin
 def update_ballot_status(ballot_id):
     data = request.get_json() or {}
     status = data.get('status')
@@ -157,7 +163,7 @@ def update_ballot_status(ballot_id):
         cur = conn.cursor()
         cur.execute("UPDATE ballots SET status = %s WHERE id = %s", (status, ballot_id))
         conn.commit()
-        return success(message=f'Ballot status updated to {status}')
+        return success({'message': f'Ballot status updated to {status}'})
     except Exception as e:
         if conn:
             conn.rollback()

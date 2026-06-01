@@ -97,13 +97,13 @@
     const statusColors = { scheduled: 'primary', completed: 'success', archived: 'secondary' };
 
     async function loadMeetings() {
-      const data = await apiGetMeetings();
+      const res = await apiGetMeetings();
       const tbody = document.getElementById('meetingsTableBody');
-      if (!data.success || !data.meetings.length) {
+      if (!res.success || !res.data.meetings.length) {
         tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No meetings scheduled</td></tr>';
         return;
       }
-      tbody.innerHTML = data.meetings.map(m => `
+      tbody.innerHTML = res.data.meetings.map(m => `
         <tr>
           <td><strong>${m.title}</strong></td>
           <td>${new Date(m.scheduled_at).toLocaleString()}</td>

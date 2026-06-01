@@ -7,6 +7,7 @@ from psycopg2 import IntegrityError
 from psycopg2.extras import RealDictCursor
 
 from config import Config
+from middleware.auth import require_auth
 from utils.supabase_client import get_db, close_db
 from utils.helpers import success, error
 
@@ -38,7 +39,7 @@ def register():
         )
         user_id = str(cur.fetchone()[0])
         conn.commit()
-        return success({'user_id': user_id}, message='Account created successfully', status=201)
+        return success({'user_id': user_id}, 201)
 
     except IntegrityError:
         if conn:
@@ -100,32 +101,20 @@ def login():
 
 
 @auth_bp.route('/profile', methods=['GET'])
+@require_auth
 def get_profile():
-    from middleware.auth import token_required
-    from flask import g
-
-    auth_header = request.headers.get('Authorization', '')
-    if not auth_header:
-        return error('Token missing', 401)
-    try:
-        token = auth_header.split(' ')[1]
-        payload = jwt.decode(token, Config.JWT_SECRET, algorithms=['HS256'])
-    except Exception as e:
-        return error(f'Invalid token: {str(e)}', 401)
-
     conn = cur = None
     try:
         conn = get_db()
         cur = conn.cursor(cursor_factory=RealDictCursor)
         cur.execute(
             "SELECT id, full_name, email, role, is_active, created_at FROM users WHERE id = %s",
-            (payload['user_id'],)
+            (g.user['user_id'],)
         )
         user = cur.fetchone()
         if not user:
             return error('User not found', 404)
-        user['id'] = str(user['id'])
-        return success({'user': dict(user)})
+        return success({'user': dict(user) | {'id': str(user['id'])}})
     except Exception as e:
         return error(str(e), 500)
     finally:

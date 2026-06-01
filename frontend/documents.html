@@ -100,13 +100,13 @@
   <script src="/frontend/js/main.js"></script>
   <script>
     async function loadDocs() {
-      const data = await apiGetDocuments();
+      const res = await apiGetDocuments();
       const tbody = document.getElementById('docsTableBody');
-      if (!data.success || !data.documents.length) {
+      if (!res.success || !res.data.documents.length) {
         tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">No documents yet</td></tr>`;
         return;
       }
-      tbody.innerHTML = data.documents.map(d => `
+      tbody.innerHTML = res.data.documents.map(d => `
         <tr>
           <td><strong>${d.title}</strong></td>
           <td><span class="badge bg-secondary">${d.file_type || '—'}</span></td>

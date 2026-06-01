@@ -125,20 +125,20 @@
   <script src="/frontend/js/main.js"></script>
   <script>
     async function loadAnalytics() {
-      const data = await apiGetAnalytics();
+      const res = await apiGetAnalytics();
       const tbody = document.getElementById('analyticsTableBody');
-      if (!data.success || !data.analytics.length) {
+      if (!res.success || !res.data.analytics.length) {
         tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No analytics uploaded yet</td></tr>';
         return;
       }
 
-      const latest = data.analytics[0];
+      const latest = res.data.analytics[0];
       document.getElementById('latestStats').style.display = 'grid';
       document.getElementById('statMessages').innerText  = latest.total_messages;
       document.getElementById('statUsers').innerText     = latest.active_users;
       document.getElementById('statSentiment').innerText = parseFloat(latest.sentiment_score).toFixed(2);
 
-      tbody.innerHTML = data.analytics.map(a => `
+      tbody.innerHTML = res.data.analytics.map(a => `
         <tr>
           <td>${new Date(a.upload_date).toLocaleDateString()}</td>
           <td>${a.total_messages}</td>

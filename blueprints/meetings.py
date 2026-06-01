@@ -1,28 +1,34 @@
 from flask import Blueprint, request, g
 from psycopg2.extras import RealDictCursor
 
-from middleware.auth import token_required, admin_required
+from middleware.auth import require_auth, require_admin
 from utils.supabase_client import get_db, close_db
-from utils.helpers import success, error
+from utils.helpers import success, error, paginate
 
 meetings_bp = Blueprint('meetings', __name__, url_prefix='/api/v1/meetings')
 
 
 @meetings_bp.route('', methods=['GET'])
-@token_required
+@require_auth
 def list_meetings():
+    page, limit, offset = paginate(request)
     conn = cur = None
     try:
         conn = get_db()
         cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        cur.execute("SELECT COUNT(*) FROM meetings")
+        total = cur.fetchone()['count']
+
         cur.execute(
             """SELECT m.id, m.title, m.scheduled_at, m.location, m.agenda,
                       m.minutes, m.status, m.created_at, u.full_name AS created_by_name
                FROM meetings m JOIN users u ON u.id = m.created_by
-               ORDER BY m.scheduled_at DESC"""
+               ORDER BY m.scheduled_at DESC LIMIT %s OFFSET %s""",
+            (limit, offset)
         )
         meetings = [dict(r) | {'id': str(r['id'])} for r in cur.fetchall()]
-        return success({'meetings': meetings})
+        return success({'meetings': meetings, 'total': total, 'page': page})
     except Exception as e:
         return error(str(e), 500)
     finally:
@@ -30,8 +36,8 @@ def list_meetings():
 
 
 @meetings_bp.route('', methods=['POST'])
-@token_required
-@admin_required
+@require_auth
+@require_admin
 def create_meeting():
     data = request.get_json() or {}
     title        = data.get('title', '').strip()
@@ -53,7 +59,7 @@ def create_meeting():
         )
         meeting_id = str(cur.fetchone()[0])
         conn.commit()
-        return success({'meeting_id': meeting_id}, message='Meeting created', status=201)
+        return success({'meeting_id': meeting_id}, 201)
     except Exception as e:
         if conn:
             conn.rollback()
@@ -63,8 +69,8 @@ def create_meeting():
 
 
 @meetings_bp.route('/<meeting_id>', methods=['PATCH'])
-@token_required
-@admin_required
+@require_auth
+@require_admin
 def update_meeting(meeting_id):
     data = request.get_json() or {}
     allowed = {'title', 'scheduled_at', 'location', 'agenda', 'minutes', 'status'}
@@ -80,7 +86,7 @@ def update_meeting(meeting_id):
         set_clause = ', '.join(f"{k} = %s" for k in updates)
         cur.execute(f"UPDATE meetings SET {set_clause} WHERE id = %s", [*updates.values(), meeting_id])
         conn.commit()
-        return success(message='Meeting updated')
+        return success({'message': 'Meeting updated'})
     except Exception as e:
         if conn:
             conn.rollback()
@@ -90,8 +96,8 @@ def update_meeting(meeting_id):
 
 
 @meetings_bp.route('/<meeting_id>', methods=['DELETE'])
-@token_required
-@admin_required
+@require_auth
+@require_admin
 def delete_meeting(meeting_id):
     conn = cur = None
     try:
@@ -99,7 +105,7 @@ def delete_meeting(meeting_id):
         cur = conn.cursor()
         cur.execute("DELETE FROM meetings WHERE id = %s", (meeting_id,))
         conn.commit()
-        return success(message='Meeting deleted')
+        return success({'message': 'Meeting deleted'})
     except Exception as e:
         if conn:
             conn.rollback()

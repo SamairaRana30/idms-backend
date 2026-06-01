@@ -1,35 +1,43 @@
 from flask import Blueprint, request, g
 from psycopg2.extras import RealDictCursor
 
-from middleware.auth import token_required, admin_required
+from middleware.auth import require_auth, require_admin
 from utils.supabase_client import get_db, close_db
-from utils.helpers import success, error
+from utils.helpers import success, error, paginate
 
 finances_bp = Blueprint('finances', __name__, url_prefix='/api/v1/finances')
 
 
 @finances_bp.route('', methods=['GET'])
-@token_required
+@require_auth
 def list_finances():
+    page, limit, offset = paginate(request)
     conn = cur = None
     try:
         conn = get_db()
         cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        cur.execute("SELECT COUNT(*) FROM finances")
+        total = cur.fetchone()['count']
+
         cur.execute(
-            """SELECT f.id, f.type, f.amount, f.description, f.transaction_date, f.created_at,
-                      u.full_name AS recorded_by_name
+            """SELECT f.id, f.type, f.amount, f.description, f.transaction_date,
+                      f.created_at, u.full_name AS recorded_by_name
                FROM finances f JOIN users u ON u.id = f.recorded_by
-               ORDER BY f.transaction_date DESC"""
+               ORDER BY f.transaction_date DESC LIMIT %s OFFSET %s""",
+            (limit, offset)
         )
         records = [dict(r) | {'id': str(r['id'])} for r in cur.fetchall()]
 
         cur.execute("SELECT COALESCE(SUM(amount),0) FROM finances WHERE type='income'")
-        total_income = float(cur.fetchone()[0])
+        total_income = float(cur.fetchone()['coalesce'])
         cur.execute("SELECT COALESCE(SUM(amount),0) FROM finances WHERE type='expense'")
-        total_expense = float(cur.fetchone()[0])
+        total_expense = float(cur.fetchone()['coalesce'])
 
         return success({
             'records': records,
+            'total':   total,
+            'page':    page,
             'summary': {
                 'total_income':  total_income,
                 'total_expense': total_expense,
@@ -43,8 +51,8 @@ def list_finances():
 
 
 @finances_bp.route('', methods=['POST'])
-@token_required
-@admin_required
+@require_auth
+@require_admin
 def add_record():
     data = request.get_json() or {}
     f_type           = data.get('type')
@@ -68,7 +76,7 @@ def add_record():
         )
         record_id = str(cur.fetchone()[0])
         conn.commit()
-        return success({'record_id': record_id}, message='Record added', status=201)
+        return success({'record_id': record_id}, 201)
     except Exception as e:
         if conn:
             conn.rollback()
@@ -78,8 +86,8 @@ def add_record():
 
 
 @finances_bp.route('/<record_id>', methods=['DELETE'])
-@token_required
-@admin_required
+@require_auth
+@require_admin
 def delete_record(record_id):
     conn = cur = None
     try:
@@ -87,7 +95,7 @@ def delete_record(record_id):
         cur = conn.cursor()
         cur.execute("DELETE FROM finances WHERE id = %s", (record_id,))
         conn.commit()
-        return success(message='Record deleted')
+        return success({'message': 'Record deleted'})
     except Exception as e:
         if conn:
             conn.rollback()

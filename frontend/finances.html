@@ -113,10 +113,10 @@
   <script src="/frontend/js/main.js"></script>
   <script>
     async function loadFinances() {
-      const data = await apiGetFinances();
-      if (!data.success) return;
+      const res = await apiGetFinances();
+      if (!res.success) return;
 
-      const s = data.summary;
+      const s = res.data.summary;
       document.getElementById('totalIncome').innerText  = `£${s.total_income.toFixed(2)}`;
       document.getElementById('totalExpense').innerText = `£${s.total_expense.toFixed(2)}`;
       const balanceEl = document.getElementById('balance');
@@ -124,11 +124,11 @@
       balanceEl.style.color = s.balance >= 0 ? '#16a34a' : '#dc2626';
 
       const tbody = document.getElementById('financeTableBody');
-      if (!data.records.length) {
+      if (!res.data.records.length) {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No records yet</td></tr>';
         return;
       }
-      tbody.innerHTML = data.records.map(r => `
+      tbody.innerHTML = res.data.records.map(r => `
         <tr>
           <td><span class="badge ${r.type === 'income' ? 'badge-active' : 'badge-inactive'}">${r.type}</span></td>
           <td><strong>£${parseFloat(r.amount).toFixed(2)}</strong></td>

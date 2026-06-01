@@ -90,13 +90,13 @@
     const statusColors = { draft: 'secondary', open: 'success', closed: 'danger' };
 
     async function loadBallots() {
-      const data = await apiGetBallots();
+      const res = await apiGetBallots();
       const container = document.getElementById('ballotsContainer');
-      if (!data.success || !data.ballots.length) {
+      if (!res.success || !res.data.ballots.length) {
         container.innerHTML = '<p class="text-muted">No ballots available.</p>';
         return;
       }
-      container.innerHTML = data.ballots.map(b => `
+      container.innerHTML = res.data.ballots.map(b => `
         <div class="col-md-6">
           <div class="card h-100">
             <div class="card-title d-flex justify-content-between align-items-center">

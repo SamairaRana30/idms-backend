@@ -88,13 +88,13 @@
     }
 
     async function loadMembers() {
-      const data = await apiGetUsers();
+      const res = await apiGetUsers();
       const tbody = document.getElementById('membersTableBody');
-      if (!data.success) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">${data.error}</td></tr>`;
+      if (!res.success) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">${res.error}</td></tr>`;
         return;
       }
-      tbody.innerHTML = data.users.map(u => `
+      tbody.innerHTML = res.data.users.map(u => `
         <tr>
           <td>${u.full_name || '—'}</td>
           <td>${u.email}</td>

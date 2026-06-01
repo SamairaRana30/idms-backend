@@ -1,11 +1,11 @@
 document.getElementById("registerForm").addEventListener("submit", function (e) {
     e.preventDefault();
 
-    const name = document.getElementById("name").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
+    const name            = document.getElementById("name").value.trim();
+    const email           = document.getElementById("email").value.trim();
+    const password        = document.getElementById("password").value;
     const confirmPassword = document.getElementById("confirmPassword").value;
-    const message = document.getElementById("message");
+    const message         = document.getElementById("message");
 
     message.style.color = "red";
 
@@ -13,12 +13,10 @@ document.getElementById("registerForm").addEventListener("submit", function (e) 
         message.innerText = "All fields are required";
         return;
     }
-
     if (password.length < 6) {
         message.innerText = "Password must be at least 6 characters";
         return;
     }
-
     if (password !== confirmPassword) {
         message.innerText = "Passwords do not match";
         return;
@@ -30,19 +28,15 @@ document.getElementById("registerForm").addEventListener("submit", function (e) 
         body: JSON.stringify({ full_name: name, email, password })
     })
     .then(res => res.json())
-    .then(data => {
-        if (data.success) {
+    .then(res => {
+        if (res.success) {
             localStorage.setItem("userName", name);
             message.style.color = "green";
-            message.innerText = "Registration successful! Redirecting...";
-            setTimeout(() => {
-                window.location.href = "/frontend/login.html";
-            }, 1500);
+            message.innerText   = "Registration successful! Redirecting...";
+            setTimeout(() => { window.location.href = "/frontend/login.html"; }, 1500);
         } else {
-            message.innerText = data.error || "Registration failed";
+            message.innerText = res.error || "Registration failed";
         }
     })
-    .catch(() => {
-        message.innerText = "Server error";
-    });
+    .catch(() => { message.innerText = "Server error"; });
 });

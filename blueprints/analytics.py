@@ -1,29 +1,35 @@
 from flask import Blueprint, request, g
 from psycopg2.extras import RealDictCursor
 
-from middleware.auth import token_required, admin_required
+from middleware.auth import require_auth, require_admin
 from utils.supabase_client import get_db, close_db
-from utils.helpers import success, error
+from utils.helpers import success, error, paginate
 
 analytics_bp = Blueprint('analytics', __name__, url_prefix='/api/v1/analytics')
 
 
 @analytics_bp.route('', methods=['GET'])
-@token_required
+@require_auth
 def list_analytics():
+    page, limit, offset = paginate(request)
     conn = cur = None
     try:
         conn = get_db()
         cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        cur.execute("SELECT COUNT(*) FROM chat_analytics")
+        total = cur.fetchone()['count']
+
         cur.execute(
             """SELECT a.id, a.upload_date, a.total_messages, a.active_users,
-                      a.peak_hour, a.sentiment_score, a.text_count, a.media_count, a.uploaded_by,
+                      a.peak_hour, a.sentiment_score, a.text_count, a.media_count,
                       u.full_name AS uploaded_by_name
                FROM chat_analytics a JOIN users u ON u.id = a.uploaded_by
-               ORDER BY a.upload_date DESC"""
+               ORDER BY a.upload_date DESC LIMIT %s OFFSET %s""",
+            (limit, offset)
         )
         records = [dict(r) | {'id': str(r['id'])} for r in cur.fetchall()]
-        return success({'analytics': records})
+        return success({'analytics': records, 'total': total, 'page': page})
     except Exception as e:
         return error(str(e), 500)
     finally:
@@ -31,8 +37,8 @@ def list_analytics():
 
 
 @analytics_bp.route('', methods=['POST'])
-@token_required
-@admin_required
+@require_auth
+@require_admin
 def upload_analytics():
     data = request.get_json() or {}
     required = ['upload_date', 'total_messages', 'active_users',
@@ -56,7 +62,7 @@ def upload_analytics():
         )
         record_id = str(cur.fetchone()[0])
         conn.commit()
-        return success({'record_id': record_id}, message='Analytics uploaded', status=201)
+        return success({'record_id': record_id}, 201)
     except Exception as e:
         if conn:
             conn.rollback()

@@ -95,13 +95,13 @@
     const typeIcons = { announcement: '📢', reminder: '⏰', broadcast: '📡', targeted: '🎯' };
 
     async function loadNotifications() {
-      const data = await apiGetNotifications();
+      const res = await apiGetNotifications();
       const container = document.getElementById('notifList');
-      if (!data.success || !data.notifications.length) {
+      if (!res.success || !res.data.notifications.length) {
         container.innerHTML = '<div class="card"><p class="text-muted text-center py-3">No notifications yet</p></div>';
         return;
       }
-      container.innerHTML = data.notifications.map(n => `
+      container.innerHTML = res.data.notifications.map(n => `
         <div class="card mb-3">
           <div class="d-flex justify-content-between align-items-start">
             <div>

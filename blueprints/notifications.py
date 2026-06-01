@@ -1,31 +1,39 @@
 from flask import Blueprint, request, g
 from psycopg2.extras import RealDictCursor
 
-from middleware.auth import token_required, admin_required
+from middleware.auth import require_auth, require_admin
 from utils.supabase_client import get_db, close_db
-from utils.helpers import success, error
+from utils.helpers import success, error, paginate
 
 notifications_bp = Blueprint('notifications', __name__, url_prefix='/api/v1/notifications')
 
 
 @notifications_bp.route('', methods=['GET'])
-@token_required
+@require_auth
 def list_notifications():
+    page, limit, offset = paginate(request)
     role = g.user.get('role', 'member')
     conn = cur = None
     try:
         conn = get_db()
         cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        cur.execute(
+            "SELECT COUNT(*) FROM notifications WHERE target_role = 'all' OR target_role = %s",
+            (role,)
+        )
+        total = cur.fetchone()['count']
+
         cur.execute(
             """SELECT n.id, n.type, n.title, n.body, n.target_role, n.sent_at,
                       u.full_name AS sent_by_name
                FROM notifications n JOIN users u ON u.id = n.sent_by
                WHERE n.target_role = 'all' OR n.target_role = %s
-               ORDER BY n.sent_at DESC""",
-            (role,)
+               ORDER BY n.sent_at DESC LIMIT %s OFFSET %s""",
+            (role, limit, offset)
         )
         notifs = [dict(r) | {'id': str(r['id'])} for r in cur.fetchall()]
-        return success({'notifications': notifs})
+        return success({'notifications': notifs, 'total': total, 'page': page})
     except Exception as e:
         return error(str(e), 500)
     finally:
@@ -33,8 +41,8 @@ def list_notifications():
 
 
 @notifications_bp.route('', methods=['POST'])
-@token_required
-@admin_required
+@require_auth
+@require_admin
 def send_notification():
     data = request.get_json() or {}
     n_type      = data.get('type', 'announcement')
@@ -60,7 +68,7 @@ def send_notification():
         )
         notif_id = str(cur.fetchone()[0])
         conn.commit()
-        return success({'notification_id': notif_id}, message='Notification sent', status=201)
+        return success({'notification_id': notif_id}, 201)
     except Exception as e:
         if conn:
             conn.rollback()
