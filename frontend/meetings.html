@@ -129,10 +129,11 @@
           <p id="detailMsg" class="text-success mt-2" style="font-size:13px"></p>
         </div>
         <div class="modal-footer flex-wrap gap-2">
-          <div class="me-auto admin-only" id="adminDetailBtns" style="display:none">
-            <button class="btn btn-sm btn-outline-success" id="inviteBtn"   onclick="sendInvites()">Send Invitations</button>
-            <button class="btn btn-sm btn-outline-primary" id="completeBtn" onclick="completeM()">Mark Complete</button>
-            <button class="btn btn-sm btn-outline-secondary" id="archiveBtn" onclick="archiveM()">Archive</button>
+          <div class="me-auto admin-only d-flex gap-2 flex-wrap" id="adminDetailBtns" style="display:none">
+            <button class="btn btn-sm btn-outline-success"   id="inviteBtn"   onclick="sendInvites()">Send Invitations</button>
+            <button class="btn btn-sm btn-outline-primary"   id="completeBtn" onclick="completeM()">Mark Complete</button>
+            <button class="btn btn-sm btn-outline-secondary" id="archiveBtn"  onclick="archiveM()">Archive</button>
+            <button class="btn btn-sm btn-outline-danger"                     onclick="deleteM()">Delete</button>
           </div>
           <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         </div>
@@ -239,20 +240,43 @@
     }
 
     async function sendInvites() {
-      const btn = document.getElementById('inviteBtn');
-      btn.disabled  = true;
-      btn.innerText = 'Sending…';
-      const res = await apiSendInvitations(activeMeetingId);
-      btn.disabled  = false;
-      btn.innerText = 'Send Invitations';
+      // Get all active members
+      const usersRes = await apiGetUsers(1, 100);
+      if (!usersRes.success) { alert('Could not load members'); return; }
+
+      const emails = usersRes.data.users
+        .filter(u => u.is_active)
+        .map(u => u.email)
+        .join(',');
+
+      const title    = document.getElementById('detailTitle').innerText;
+      const date     = document.getElementById('detailDate').innerText;
+      const location = document.getElementById('detailLocation').innerText;
+      const agenda   = document.getElementById('detailAgenda').innerText;
+
+      const subject = encodeURIComponent(`Meeting Invitation: ${title}`);
+      const body    = encodeURIComponent(
+        `You are invited to the following meeting:\n\n` +
+        `Title:    ${title}\n` +
+        `Date:     ${date}\n` +
+        `Location: ${location}\n\n` +
+        `Agenda:\n${agenda}\n\n` +
+        `Please make every effort to attend.\n\nIDMS System`
+      );
+
+      window.location.href = `mailto:${emails}?subject=${subject}&body=${body}`;
+
+      document.getElementById('detailMsg').innerText = `Opening email with ${usersRes.data.users.length} recipients…`;
+      document.getElementById('detailMsg').className = 'text-success mt-2';
+    }
+
+    async function deleteM() {
+      if (!confirm('Delete this meeting permanently?')) return;
+      const res = await apiDeleteMeeting(activeMeetingId);
       if (res.success) {
-        const { sent, failed } = res.data;
-        document.getElementById('detailMsg').innerText = `Sent: ${sent} | Failed: ${failed}`;
-        document.getElementById('detailMsg').className = sent > 0 ? 'text-success mt-2' : 'text-warning mt-2';
-      } else {
-        document.getElementById('detailMsg').innerText = res.error || 'Could not send invitations';
-        document.getElementById('detailMsg').className = 'text-danger mt-2';
-      }
+        bootstrap.Modal.getInstance(document.getElementById('meetingDetailModal')).hide();
+        loadMeetings();
+      } else { alert(res.error); }
     }
 
     async function completeM() {
