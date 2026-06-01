@@ -8,6 +8,10 @@ function authHeaders() {
     };
 }
 
+function authHeadersNoContent() {
+    return { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 async function apiRegister(full_name, email, password) {
     const r = await fetch(`${API}/auth/register`, {
@@ -31,6 +35,18 @@ async function apiProfile() {
 }
 
 // ── Users ─────────────────────────────────────────────────────────────────────
+async function apiGetMe() {
+    const r = await fetch(`${API}/users/me`, { headers: authHeaders() });
+    return r.json();
+}
+
+async function apiUpdateMe(data) {
+    const r = await fetch(`${API}/users/me`, {
+        method: 'PUT', headers: authHeaders(), body: JSON.stringify(data)
+    });
+    return r.json();
+}
+
 async function apiGetUsers(page = 1, limit = 20) {
     const r = await fetch(`${API}/users?page=${page}&limit=${limit}`, { headers: authHeaders() });
     return r.json();
@@ -38,7 +54,7 @@ async function apiGetUsers(page = 1, limit = 20) {
 
 async function apiUpdateUser(userId, data) {
     const r = await fetch(`${API}/users/${userId}`, {
-        method: 'PATCH', headers: authHeaders(), body: JSON.stringify(data)
+        method: 'PUT', headers: authHeaders(), body: JSON.stringify(data)
     });
     return r.json();
 }
@@ -50,16 +66,43 @@ async function apiDeleteUser(userId) {
     return r.json();
 }
 
-// ── Documents ─────────────────────────────────────────────────────────────────
-async function apiGetDocuments(page = 1, limit = 20) {
-    const r = await fetch(`${API}/documents?page=${page}&limit=${limit}`, { headers: authHeaders() });
+// ── Migration ─────────────────────────────────────────────────────────────────
+async function apiMigrationPreview(formData) {
+    const r = await fetch(`${API}/migration/upload`, {
+        method: 'POST', headers: authHeadersNoContent(), body: formData
+    });
     return r.json();
 }
 
-async function apiCreateDocument(data) {
-    const r = await fetch(`${API}/documents`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(data)
+async function apiMigrationImport(formData) {
+    const r = await fetch(`${API}/migration/import`, {
+        method: 'POST', headers: authHeadersNoContent(), body: formData
     });
+    return r.json();
+}
+
+// ── Documents ─────────────────────────────────────────────────────────────────
+async function apiUploadDocument(formData) {
+    const r = await fetch(`${API}/documents/upload`, {
+        method: 'POST', headers: authHeadersNoContent(), body: formData
+    });
+    return r.json();
+}
+
+async function apiGetDocuments(page = 1, limit = 20, category = '') {
+    const params = new URLSearchParams({ page, limit });
+    if (category) params.set('category', category);
+    const r = await fetch(`${API}/documents?${params}`, { headers: authHeaders() });
+    return r.json();
+}
+
+async function apiSearchDocuments(q) {
+    const r = await fetch(`${API}/documents/search?q=${encodeURIComponent(q)}`, { headers: authHeaders() });
+    return r.json();
+}
+
+async function apiDownloadDocument(docId) {
+    const r = await fetch(`${API}/documents/${docId}/download`, { headers: authHeaders() });
     return r.json();
 }
 

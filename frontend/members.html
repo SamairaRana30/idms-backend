@@ -8,6 +8,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <style>
+    .drop-zone {
+      border: 2px dashed #c7d2fe;
+      border-radius: 10px;
+      padding: 32px;
+      text-align: center;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    .drop-zone.over { border-color: #4f46e5; background: #f0f0fb; }
+    .drop-zone .drop-icon { font-size: 32px; margin-bottom: 8px; }
+    .search-row { display: flex; gap: 10px; margin-bottom: 16px; }
+    .pagination-row { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 13px; color: #64748b; }
+  </style>
 </head>
 <body>
 
@@ -38,40 +53,136 @@
   <div class="main">
     <div class="topbar d-flex justify-content-between align-items-center">
       <h1>Members</h1>
-      <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#inviteModal">
-        + Invite Member
-      </button>
     </div>
 
+    <!-- My Profile (all users) -->
     <div class="card">
-      <h2 class="card-title">All Members</h2>
+      <h2 class="card-title">My Profile</h2>
+      <div id="profileView">
+        <div class="profile-row"><span class="profile-label">Name</span><span id="pName">—</span></div>
+        <div class="profile-row"><span class="profile-label">Email</span><span id="pEmail">—</span></div>
+        <div class="profile-row"><span class="profile-label">Role</span><span id="pRole">—</span></div>
+        <div class="profile-row"><span class="profile-label">Joined</span><span id="pJoined">—</span></div>
+        <div class="mt-3">
+          <button class="btn btn-outline-primary btn-sm" onclick="showEditProfile()">Edit Profile</button>
+        </div>
+      </div>
+      <div id="profileEditForm" style="display:none">
+        <div class="mb-3">
+          <label class="form-label fw-500" style="font-size:13px">Full Name</label>
+          <input id="editName" type="text" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-500" style="font-size:13px">Email</label>
+          <input id="editEmail" type="email" class="form-control">
+        </div>
+        <div id="editProfileMsg" class="text-danger" style="font-size:13px"></div>
+        <div class="d-flex gap-2 mt-3">
+          <button class="btn btn-primary btn-sm" onclick="saveProfile()">Save</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="cancelEdit()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin: Member Directory -->
+    <div class="card admin-only" id="memberDirCard" style="display:none">
+      <h2 class="card-title">Member Directory</h2>
+      <div class="search-row">
+        <input id="searchInput" type="text" class="form-control" placeholder="Search by name or email…" oninput="filterTable()">
+      </div>
       <table class="users-table">
         <thead>
-          <tr>
-            <th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th>
-          </tr>
+          <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr>
         </thead>
         <tbody id="membersTableBody">
-          <tr><td colspan="6" class="text-center text-muted py-4">Loading...</td></tr>
+          <tr><td colspan="6" class="text-center text-muted py-4">Loading…</td></tr>
         </tbody>
       </table>
+      <div class="pagination-row">
+        <span id="pageInfo"></span>
+        <div class="d-flex gap-2">
+          <button id="prevBtn" class="btn btn-outline-secondary btn-sm" onclick="changePage(-1)" disabled>Previous</button>
+          <button id="nextBtn" class="btn btn-outline-secondary btn-sm" onclick="changePage(1)"  disabled>Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin: Data Migration -->
+    <div class="card admin-only" id="migrationCard" style="display:none">
+      <h2 class="card-title">Import Members (CSV / Excel)</h2>
+
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('migrationFile').click()">
+        <div class="drop-icon">📂</div>
+        <div id="dropLabel">Drop a CSV or Excel file here, or click to browse</div>
+        <input type="file" id="migrationFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="fileSelected(this)">
+      </div>
+
+      <div id="previewSection" style="display:none" class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0 fw-600" style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:#64748b">Preview (first 10 rows)</h6>
+          <div id="previewStats" class="text-muted" style="font-size:12px"></div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="users-table" id="previewTable"></table>
+        </div>
+        <div class="mt-3 d-flex gap-2 align-items-center">
+          <button class="btn btn-primary btn-sm" onclick="runImport()">Import All</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="resetMigration()">Clear</button>
+          <span id="importMsg" class="text-danger" style="font-size:13px"></span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Invite Modal -->
-  <div class="modal fade" id="inviteModal" tabindex="-1">
+  <!-- Edit Member Modal (admin) -->
+  <div class="modal fade" id="editMemberModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Invite Member</h5>
+          <h5 class="modal-title">Edit Member</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <p class="text-muted">Share the registration link with the new member:</p>
-          <div class="input-group">
-            <input type="text" class="form-control" id="registerLink" readonly>
-            <button class="btn btn-outline-secondary" onclick="copyLink()">Copy</button>
+          <input type="hidden" id="editMemberId">
+          <div class="mb-3">
+            <label class="form-label">Full Name</label>
+            <input id="editMemberName" class="form-control">
           </div>
+          <div class="mb-3">
+            <label class="form-label">Role</label>
+            <select id="editMemberRole" class="form-select">
+              <option value="member">Member</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select id="editMemberActive" class="form-select">
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+          <div id="editMemberMsg" class="text-danger" style="font-size:13px"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" onclick="saveMemberEdit()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Summary Modal -->
+  <div class="modal fade" id="importSummaryModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Import Complete</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="importSummaryBody"></div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" data-bs-dismiss="modal" onclick="resetMigration(); loadMembers()">Done</button>
         </div>
       </div>
     </div>
@@ -81,20 +192,74 @@
   <script src="/frontend/js/api.js"></script>
   <script src="/frontend/js/main.js"></script>
   <script>
-    document.getElementById('registerLink').value = window.location.origin + '/frontend/register.html';
+    let currentPage  = 1;
+    let totalUsers   = 0;
+    const pageLimit  = 20;
+    let allRows      = [];
+    let migrationFile = null;
 
-    function copyLink() {
-      navigator.clipboard.writeText(document.getElementById('registerLink').value);
+    // ── Profile ──────────────────────────────────────────────────────────────
+    async function loadProfile() {
+      const res = await apiGetMe();
+      if (!res.success) return;
+      const u = res.data.user;
+      document.getElementById('pName').innerText   = u.full_name || '—';
+      document.getElementById('pEmail').innerText  = u.email || '—';
+      document.getElementById('pRole').innerText   = u.role || '—';
+      document.getElementById('pJoined').innerText = new Date(u.created_at).toLocaleDateString();
+      document.getElementById('editName').value    = u.full_name || '';
+      document.getElementById('editEmail').value   = u.email || '';
     }
 
+    function showEditProfile() {
+      document.getElementById('profileView').style.display     = 'none';
+      document.getElementById('profileEditForm').style.display = 'block';
+    }
+
+    function cancelEdit() {
+      document.getElementById('profileView').style.display     = 'block';
+      document.getElementById('profileEditForm').style.display = 'none';
+      document.getElementById('editProfileMsg').innerText = '';
+    }
+
+    async function saveProfile() {
+      const full_name = document.getElementById('editName').value.trim();
+      const email     = document.getElementById('editEmail').value.trim();
+      const msg       = document.getElementById('editProfileMsg');
+      if (!full_name || !email) { msg.innerText = 'Name and email are required'; return; }
+
+      const res = await apiUpdateMe({ full_name, email });
+      if (res.success) {
+        localStorage.setItem('userName', full_name);
+        localStorage.setItem('userEmail', email);
+        cancelEdit();
+        loadProfile();
+      } else {
+        msg.innerText = res.error || 'Update failed';
+      }
+    }
+
+    // ── Member directory (admin) ──────────────────────────────────────────────
     async function loadMembers() {
-      const res = await apiGetUsers();
+      const res = await apiGetUsers(currentPage, pageLimit);
       const tbody = document.getElementById('membersTableBody');
       if (!res.success) {
         tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">${res.error}</td></tr>`;
         return;
       }
-      tbody.innerHTML = res.data.users.map(u => `
+      allRows    = res.data.users;
+      totalUsers = Number(res.data.total);
+      renderTable(allRows);
+      updatePagination();
+    }
+
+    function renderTable(users) {
+      const tbody = document.getElementById('membersTableBody');
+      if (!users.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No members found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = users.map(u => `
         <tr>
           <td>${u.full_name || '—'}</td>
           <td>${u.email}</td>
@@ -102,7 +267,8 @@
           <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
           <td>${new Date(u.created_at).toLocaleDateString()}</td>
           <td>
-            <button class="btn btn-sm btn-outline-danger" onclick="toggleActive('${u.id}', ${u.is_active})">
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditMember('${u.id}','${u.full_name}','${u.role}',${u.is_active})">Edit</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deactivateMember('${u.id}',${u.is_active})">
               ${u.is_active ? 'Deactivate' : 'Activate'}
             </button>
           </td>
@@ -110,13 +276,145 @@
       `).join('');
     }
 
-    async function toggleActive(userId, current) {
-      const data = await apiUpdateUser(userId, { is_active: !current });
-      if (data.success) loadMembers();
-      else alert(data.error);
+    function filterTable() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = allRows.filter(u =>
+        (u.full_name || '').toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q)
+      );
+      renderTable(filtered);
     }
 
-    loadMembers();
+    function updatePagination() {
+      const totalPages = Math.ceil(totalUsers / pageLimit);
+      document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages} (${totalUsers} members)`;
+      document.getElementById('prevBtn').disabled = currentPage <= 1;
+      document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+    }
+
+    function changePage(dir) {
+      currentPage += dir;
+      loadMembers();
+    }
+
+    function openEditMember(id, name, role, isActive) {
+      document.getElementById('editMemberId').value         = id;
+      document.getElementById('editMemberName').value       = name;
+      document.getElementById('editMemberRole').value       = role;
+      document.getElementById('editMemberActive').value     = String(isActive);
+      document.getElementById('editMemberMsg').innerText    = '';
+      new bootstrap.Modal(document.getElementById('editMemberModal')).show();
+    }
+
+    async function saveMemberEdit() {
+      const id       = document.getElementById('editMemberId').value;
+      const full_name = document.getElementById('editMemberName').value.trim();
+      const role     = document.getElementById('editMemberRole').value;
+      const is_active = document.getElementById('editMemberActive').value === 'true';
+
+      const res = await apiUpdateUser(id, { full_name, role, is_active });
+      if (res.success) {
+        bootstrap.Modal.getInstance(document.getElementById('editMemberModal')).hide();
+        loadMembers();
+      } else {
+        document.getElementById('editMemberMsg').innerText = res.error || 'Update failed';
+      }
+    }
+
+    async function deactivateMember(id, current) {
+      if (!confirm(current ? 'Deactivate this member?' : 'Reactivate this member?')) return;
+      const res = await apiUpdateUser(id, { is_active: !current });
+      if (res.success) loadMembers();
+      else alert(res.error);
+    }
+
+    // ── Migration ─────────────────────────────────────────────────────────────
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+    dropZone.addEventListener('drop',      e => {
+      e.preventDefault();
+      dropZone.classList.remove('over');
+      const file = e.dataTransfer.files[0];
+      if (file) processFile(file);
+    });
+
+    function fileSelected(input) {
+      if (input.files[0]) processFile(input.files[0]);
+    }
+
+    async function processFile(file) {
+      migrationFile = file;
+      document.getElementById('dropLabel').innerText = `Selected: ${file.name}`;
+      document.getElementById('importMsg').innerText  = '';
+
+      const fd  = new FormData();
+      fd.append('file', file);
+      const res = await apiMigrationPreview(fd);
+      if (!res.success) {
+        document.getElementById('importMsg').innerText = res.error || 'Preview failed';
+        return;
+      }
+
+      const { preview, columns, stats } = res.data;
+      document.getElementById('previewStats').innerText =
+        `Total: ${stats.total_rows} rows | Duplicates: ${stats.duplicate_emails} | Missing email: ${stats.missing_email}`;
+
+      const table = document.getElementById('previewTable');
+      table.innerHTML = `
+        <thead><tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${preview.map(row =>
+          `<tr>${columns.map(c => `<td>${row[c] ?? ''}</td>`).join('')}</tr>`
+        ).join('')}</tbody>
+      `;
+      document.getElementById('previewSection').style.display = 'block';
+    }
+
+    async function runImport() {
+      if (!migrationFile) return;
+      const btn = document.querySelector('#migrationCard .btn-primary');
+      btn.disabled    = true;
+      btn.innerText   = 'Importing…';
+      document.getElementById('importMsg').innerText = '';
+
+      const fd = new FormData();
+      fd.append('file', migrationFile);
+      const res = await apiMigrationImport(fd);
+      btn.disabled  = false;
+      btn.innerText = 'Import All';
+
+      if (!res.success) {
+        document.getElementById('importMsg').innerText = res.error || 'Import failed';
+        return;
+      }
+
+      const { inserted, skipped_duplicates, skipped_missing_email, errors } = res.data;
+      document.getElementById('importSummaryBody').innerHTML = `
+        <div class="d-flex flex-column gap-2">
+          <div class="d-flex justify-content-between"><span>Inserted</span><strong class="text-success">${inserted}</strong></div>
+          <div class="d-flex justify-content-between"><span>Skipped (duplicate)</span><strong class="text-warning">${skipped_duplicates}</strong></div>
+          <div class="d-flex justify-content-between"><span>Skipped (no email)</span><strong class="text-danger">${skipped_missing_email}</strong></div>
+          ${errors.length ? `<hr><small class="text-danger">${errors.join('<br>')}</small>` : ''}
+        </div>
+      `;
+      new bootstrap.Modal(document.getElementById('importSummaryModal')).show();
+    }
+
+    function resetMigration() {
+      migrationFile = null;
+      document.getElementById('dropLabel').innerText         = 'Drop a CSV or Excel file here, or click to browse';
+      document.getElementById('migrationFile').value         = '';
+      document.getElementById('previewSection').style.display = 'none';
+      document.getElementById('importMsg').innerText         = '';
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    loadProfile();
+    if (getRole() === 'admin') {
+      document.getElementById('memberDirCard').style.display  = 'block';
+      document.getElementById('migrationCard').style.display  = 'block';
+      loadMembers();
+    }
   </script>
 </body>
 </html>
