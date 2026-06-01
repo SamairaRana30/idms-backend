@@ -38,7 +38,7 @@ if (role === "admin") {
     const tbody = document.getElementById("usersTableBody");
     tbody.innerHTML = users.map(u => `
       <tr>
-        <td>${u.id}</td>
+        <td>${u.full_name || '—'}</td>
         <td>${u.email}</td>
         <td><span class="badge badge-${u.role}">${u.role}</span></td>
         <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>

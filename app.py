@@ -110,8 +110,7 @@ def init_test_data():
         cur = conn.cursor()
 
         password = 'Test@123'
-        salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(10))
         hashed_b64 = base64.b64encode(hashed_password).decode('utf-8')
 
         cur.execute("SELECT id FROM users WHERE email = %s", ('admin@test.com',))
@@ -119,8 +118,8 @@ def init_test_data():
 
         if not existing_user:
             cur.execute(
-                "INSERT INTO users (email, password_hash, role) VALUES (%s, %s, %s)",
-                ('admin@test.com', hashed_b64, 'admin')
+                "INSERT INTO users (full_name, email, password_hash, role) VALUES (%s, %s, %s, %s)",
+                ('Admin User', 'admin@test.com', hashed_b64, 'admin')
             )
             conn.commit()
             message = 'Test admin user created successfully.'
@@ -167,8 +166,9 @@ def login():
 
         if bcrypt.checkpw(password.encode('utf-8'), stored_hash):
             token = jwt.encode({
-                'user_id': user['id'],
+                'user_id': str(user['id']),
                 'email': user['email'],
+                'full_name': user['full_name'],
                 'role': user['role'],
                 'exp': datetime.now(timezone.utc) + timedelta(hours=24)
             }, app.config['JWT_SECRET'], algorithm='HS256')
@@ -177,7 +177,8 @@ def login():
                 'success': True,
                 'token': token,
                 'user': {
-                    'id': user['id'],
+                    'id': str(user['id']),
+                    'full_name': user['full_name'],
                     'email': user['email'],
                     'role': user['role']
                 }
@@ -192,30 +193,31 @@ def login():
 def register():
     """Register a new user"""
     data = request.get_json() or {}
-    email = data.get('email')
-    password = data.get('password')
+    full_name = data.get('full_name', '').strip()
+    email = data.get('email', '').strip()
+    password = data.get('password', '')
 
-    if not email or not password:
-        return jsonify({'success': False, 'error': 'Email and password required'}), 400
+    if not full_name or not email or not password:
+        return jsonify({'success': False, 'error': 'Full name, email, and password are required'}), 400
 
     conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
 
-        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(10))
         hashed_b64 = base64.b64encode(hashed).decode('utf-8')
 
         cur.execute(
-            "INSERT INTO users (email, password_hash, role) VALUES (%s, %s, %s) RETURNING id",
-            (email, hashed_b64, 'user')
+            "INSERT INTO users (full_name, email, password_hash, role) VALUES (%s, %s, %s, %s) RETURNING id",
+            (full_name, email, hashed_b64, 'member')
         )
         user_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
         conn.close()
 
-        return jsonify({'success': True, 'message': 'User created', 'user_id': user_id}), 201
+        return jsonify({'success': True, 'message': 'Account created successfully', 'user_id': str(user_id)}), 201
     except IntegrityError:
         if conn:
             try:
@@ -243,7 +245,7 @@ def get_users():
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT id, email, role, is_active, created_at FROM users")
+        cur.execute("SELECT id, full_name, email, role, is_active, created_at FROM users ORDER BY created_at DESC")
         users = cur.fetchall()
         cur.close()
         conn.close()

@@ -27,7 +27,7 @@ document.getElementById("registerForm").addEventListener("submit", function (e) 
     fetch("/api/v1/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ full_name: name, email, password })
     })
     .then(res => res.json())
     .then(data => {

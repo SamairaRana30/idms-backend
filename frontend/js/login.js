@@ -21,8 +21,9 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
     .then(data => {
         if (data.success) {
             localStorage.setItem("token", data.token);
-            localStorage.setItem("userName", data.user.email);
+            localStorage.setItem("userName", data.user.full_name || data.user.email);
             localStorage.setItem("role", data.user.role);
+            localStorage.setItem("userId", data.user.id);
 
             message.style.color = "green";
             message.innerText = "Login successful! Redirecting...";
