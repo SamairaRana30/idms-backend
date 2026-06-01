@@ -12,6 +12,7 @@ from blueprints.meetings      import meetings_bp
 from blueprints.notifications import notifications_bp
 from blueprints.finances      import finances_bp
 from blueprints.analytics     import analytics_bp
+from blueprints.audit         import audit_bp
 
 
 def create_app():
@@ -25,7 +26,7 @@ def create_app():
 
     blueprints = [
         auth_bp, users_bp, migration_bp, documents_bp,
-        voting_bp, meetings_bp, notifications_bp, finances_bp, analytics_bp
+        voting_bp, meetings_bp, notifications_bp, finances_bp, analytics_bp, audit_bp
     ]
     for bp in blueprints:
         app.register_blueprint(bp)

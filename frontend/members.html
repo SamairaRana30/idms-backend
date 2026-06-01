@@ -22,6 +22,13 @@
     .drop-zone .drop-icon { font-size: 32px; margin-bottom: 8px; }
     .search-row { display: flex; gap: 10px; margin-bottom: 16px; }
     .pagination-row { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 13px; color: #64748b; }
+    .sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+    .sortable:hover { color: #4f46e5; }
+    .sort-arrow { font-size: 10px; margin-left: 4px; opacity: .5; }
+    .sort-arrow.active { opacity: 1; color: #4f46e5; }
+    .audit-row { font-size: 12px; }
+    .audit-action { font-weight: 600; color: #4f46e5; }
+    .audit-time { color: #94a3b8; }
   </style>
 </head>
 <body>
@@ -92,7 +99,14 @@
       </div>
       <table class="users-table">
         <thead>
-          <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr>
+          <tr>
+            <th class="sortable" onclick="sortBy('full_name')">Name <span class="sort-arrow" id="sort-full_name">↕</span></th>
+            <th class="sortable" onclick="sortBy('email')">Email <span class="sort-arrow" id="sort-email">↕</span></th>
+            <th class="sortable" onclick="sortBy('role')">Role <span class="sort-arrow" id="sort-role">↕</span></th>
+            <th class="sortable" onclick="sortBy('is_active')">Status <span class="sort-arrow" id="sort-is_active">↕</span></th>
+            <th class="sortable" onclick="sortBy('created_at')">Joined <span class="sort-arrow" id="sort-created_at">↕</span></th>
+            <th>Actions</th>
+          </tr>
         </thead>
         <tbody id="membersTableBody">
           <tr><td colspan="6" class="text-center text-muted py-4">Loading…</td></tr>
@@ -105,6 +119,22 @@
           <button id="nextBtn" class="btn btn-outline-secondary btn-sm" onclick="changePage(1)"  disabled>Next</button>
         </div>
       </div>
+    </div>
+
+    <!-- Admin: Audit Log -->
+    <div class="card admin-only" id="auditCard" style="display:none">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="card-title mb-0">Audit Log</h2>
+        <button class="btn btn-outline-secondary btn-sm" onclick="loadAuditLog()">Refresh</button>
+      </div>
+      <table class="users-table">
+        <thead>
+          <tr><th>Action</th><th>Entity</th><th>Performed By</th><th>Time</th><th>Details</th></tr>
+        </thead>
+        <tbody id="auditTableBody">
+          <tr><td colspan="5" class="text-center text-muted py-3">Loading…</td></tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- Admin: Data Migration -->
@@ -192,11 +222,13 @@
   <script src="/frontend/js/api.js"></script>
   <script src="/frontend/js/main.js"></script>
   <script>
-    let currentPage  = 1;
-    let totalUsers   = 0;
-    const pageLimit  = 20;
-    let allRows      = [];
+    let currentPage   = 1;
+    let totalUsers    = 0;
+    const pageLimit   = 20;
+    let allRows       = [];
     let migrationFile = null;
+    let sortCol       = 'created_at';
+    let sortDir       = 'desc';
 
     // ── Profile ──────────────────────────────────────────────────────────────
     async function loadProfile() {
@@ -283,6 +315,36 @@
         u.email.toLowerCase().includes(q)
       );
       renderTable(filtered);
+    }
+
+    function sortBy(col) {
+      if (sortCol === col) {
+        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortCol = col;
+        sortDir = 'asc';
+      }
+
+      // Update arrow indicators
+      document.querySelectorAll('.sort-arrow').forEach(el => {
+        el.classList.remove('active');
+        el.innerText = '↕';
+      });
+      const arrow = document.getElementById(`sort-${col}`);
+      if (arrow) {
+        arrow.innerText    = sortDir === 'asc' ? '↑' : '↓';
+        arrow.classList.add('active');
+      }
+
+      allRows.sort((a, b) => {
+        let va = a[col] ?? '';
+        let vb = b[col] ?? '';
+        if (typeof va === 'boolean') { va = va ? 1 : 0; vb = vb ? 1 : 0; }
+        if (va < vb) return sortDir === 'asc' ? -1 :  1;
+        if (va > vb) return sortDir === 'asc' ?  1 : -1;
+        return 0;
+      });
+      renderTable(allRows);
     }
 
     function updatePagination() {
@@ -408,12 +470,33 @@
       document.getElementById('importMsg').innerText         = '';
     }
 
+    // ── Audit log ─────────────────────────────────────────────────────────────
+    async function loadAuditLog() {
+      const res = await apiGetAuditLog();
+      const tbody = document.getElementById('auditTableBody');
+      if (!res.success || !res.data.logs.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No audit entries yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = res.data.logs.map(l => `
+        <tr class="audit-row">
+          <td><span class="audit-action">${l.action}</span></td>
+          <td>${l.entity}${l.entity_id ? ` <small class="text-muted">${l.entity_id.slice(0,8)}…</small>` : ''}</td>
+          <td>${l.performed_by_name || l.performed_by_email || '—'}</td>
+          <td class="audit-time">${new Date(l.created_at).toLocaleString()}</td>
+          <td style="font-size:11px;color:#64748b">${l.details ? JSON.stringify(l.details) : '—'}</td>
+        </tr>
+      `).join('');
+    }
+
     // ── Init ──────────────────────────────────────────────────────────────────
     loadProfile();
     if (getRole() === 'admin') {
       document.getElementById('memberDirCard').style.display  = 'block';
+      document.getElementById('auditCard').style.display      = 'block';
       document.getElementById('migrationCard').style.display  = 'block';
       loadMembers();
+      loadAuditLog();
     }
   </script>
 </body>

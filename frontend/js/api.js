@@ -205,6 +205,12 @@ async function apiDeleteFinanceRecord(recordId) {
     return r.json();
 }
 
+// ── Audit ─────────────────────────────────────────────────────────────────────
+async function apiGetAuditLog(page = 1, limit = 20) {
+    const r = await fetch(`${API}/audit?page=${page}&limit=${limit}`, { headers: authHeaders() });
+    return r.json();
+}
+
 // ── Analytics ─────────────────────────────────────────────────────────────────
 async function apiGetAnalytics(page = 1, limit = 20) {
     const r = await fetch(`${API}/analytics?page=${page}&limit=${limit}`, { headers: authHeaders() });

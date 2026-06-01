@@ -5,6 +5,7 @@ from psycopg2.extras import RealDictCursor
 from middleware.auth import require_auth, require_admin
 from utils.supabase_client import get_db, close_db
 from utils.helpers import success, error, paginate
+from utils.audit import log_action
 
 users_bp = Blueprint('users', __name__, url_prefix='/api/v1/users')
 
@@ -60,6 +61,7 @@ def update_me():
             [*updates.values(), g.user['user_id']]
         )
         conn.commit()
+        log_action('user.update_self', 'user', g.user['user_id'], g.user['user_id'], updates)
         return success({'message': 'Profile updated'})
     except Exception as e:
         if conn:
@@ -119,6 +121,7 @@ def update_user(user_id):
             [*updates.values(), user_id]
         )
         conn.commit()
+        log_action('user.update', 'user', user_id, g.user['user_id'], updates)
         return success({'message': 'User updated'})
     except Exception as e:
         if conn:
@@ -143,6 +146,7 @@ def delete_user(user_id):
             (user_id,)
         )
         conn.commit()
+        log_action('user.delete', 'user', user_id, g.user['user_id'])
         return success({'message': 'User deactivated'})
     except Exception as e:
         if conn:
