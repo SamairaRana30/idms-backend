@@ -15,23 +15,24 @@ def list_finances():
     conn = cur = None
     try:
         conn = get_db()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur  = conn.cursor(cursor_factory=RealDictCursor)
 
-        cur.execute("SELECT COUNT(*) FROM finances")
+        cur.execute("SELECT COUNT(*) FROM finance_records")
         total = cur.fetchone()['count']
 
         cur.execute(
-            """SELECT f.id, f.type, f.amount, f.description, f.transaction_date,
-                      f.created_at, u.full_name AS recorded_by_name
-               FROM finances f JOIN users u ON u.id = f.recorded_by
-               ORDER BY f.transaction_date DESC LIMIT %s OFFSET %s""",
+            """SELECT f.id, f.type, f.amount, f.description, f.created_at,
+                      u.full_name AS recorded_by_name
+               FROM finance_records f
+               LEFT JOIN users u ON u.id::text = f.recorded_by
+               ORDER BY f.created_at DESC LIMIT %s OFFSET %s""",
             (limit, offset)
         )
         records = [dict(r) | {'id': str(r['id'])} for r in cur.fetchall()]
 
-        cur.execute("SELECT COALESCE(SUM(amount),0) FROM finances WHERE type='income'")
+        cur.execute("SELECT COALESCE(SUM(amount),0) FROM finance_records WHERE type='income'")
         total_income = float(cur.fetchone()['coalesce'])
-        cur.execute("SELECT COALESCE(SUM(amount),0) FROM finances WHERE type='expense'")
+        cur.execute("SELECT COALESCE(SUM(amount),0) FROM finance_records WHERE type='expense'")
         total_expense = float(cur.fetchone()['coalesce'])
 
         return success({
@@ -54,25 +55,24 @@ def list_finances():
 @require_auth
 @require_admin
 def add_record():
-    data = request.get_json() or {}
-    f_type           = data.get('type')
-    amount           = data.get('amount')
-    description      = data.get('description', '').strip()
-    transaction_date = data.get('transaction_date')
+    data        = request.get_json() or {}
+    f_type      = data.get('type')
+    amount      = data.get('amount')
+    description = data.get('description', '').strip()
 
     if f_type not in ('income', 'expense'):
         return error("Type must be 'income' or 'expense'", 400)
-    if not amount or not transaction_date:
-        return error('Amount and transaction_date are required', 400)
+    if not amount:
+        return error('Amount is required', 400)
 
     conn = cur = None
     try:
         conn = get_db()
-        cur = conn.cursor()
+        cur  = conn.cursor()
         cur.execute(
-            """INSERT INTO finances (type, amount, description, recorded_by, transaction_date)
-               VALUES (%s, %s, %s, %s, %s) RETURNING id""",
-            (f_type, amount, description, g.user['user_id'], transaction_date)
+            "INSERT INTO finance_records (type, amount, description, recorded_by) "
+            "VALUES (%s, %s, %s, %s) RETURNING id",
+            (f_type, amount, description, g.user['user_id'])
         )
         record_id = str(cur.fetchone()[0])
         conn.commit()
@@ -92,8 +92,8 @@ def delete_record(record_id):
     conn = cur = None
     try:
         conn = get_db()
-        cur = conn.cursor()
-        cur.execute("DELETE FROM finances WHERE id = %s", (record_id,))
+        cur  = conn.cursor()
+        cur.execute("DELETE FROM finance_records WHERE id = %s", (record_id,))
         conn.commit()
         return success({'message': 'Record deleted'})
     except Exception as e:
