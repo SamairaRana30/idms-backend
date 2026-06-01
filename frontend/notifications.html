@@ -101,6 +101,7 @@
         container.innerHTML = '<div class="card"><p class="text-muted text-center py-3">No notifications yet</p></div>';
         return;
       }
+      const isAdmin = getRole() === 'admin';
       container.innerHTML = res.data.notifications.map(n => `
         <div class="card mb-3">
           <div class="d-flex justify-content-between align-items-start">
@@ -110,7 +111,10 @@
               <span class="badge bg-secondary ms-2">${n.type}</span>
               <span class="badge bg-light text-dark ms-1">${n.target_role}</span>
             </div>
-            <small class="text-muted">${new Date(n.sent_at).toLocaleString()}</small>
+            <div class="d-flex align-items-center gap-2">
+              <small class="text-muted">${new Date(n.sent_at).toLocaleString()}</small>
+              ${isAdmin ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteNotif('${n.id}')">Delete</button>` : ''}
+            </div>
           </div>
           <p class="mt-2 mb-0" style="font-size:14px;color:#444">${n.body}</p>
           <small class="text-muted mt-1">Sent by ${n.sent_by_name}</small>
@@ -147,6 +151,15 @@
       } else {
         msg.innerText = res.error || 'Send failed';
       }
+    }
+
+    async function deleteNotif(id) {
+      if (!confirm('Delete this notification?')) return;
+      const res = await fetch(`/api/v1/notifications/${id}`, {
+        method: 'DELETE', headers: authHeaders()
+      }).then(r => r.json());
+      if (res.success) loadNotifications();
+      else alert(res.error);
     }
 
     loadNotifications();

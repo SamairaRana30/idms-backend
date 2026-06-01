@@ -13,6 +13,25 @@ from utils.helpers import success, error, paginate
 notifications_bp = Blueprint('notifications', __name__, url_prefix='/api/v1/notifications')
 
 
+@notifications_bp.route('/<notif_id>', methods=['DELETE'])
+@require_auth
+@require_admin
+def delete_notification(notif_id):
+    conn = cur = None
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+        cur.execute("DELETE FROM notifications WHERE id = %s", (notif_id,))
+        conn.commit()
+        return success({'message': 'Notification deleted'})
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return error(str(e), 500)
+    finally:
+        close_db(conn, cur)
+
+
 @notifications_bp.route('', methods=['GET'])
 @require_auth
 def list_notifications():
