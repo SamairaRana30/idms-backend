@@ -5,34 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IDMS | Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/frontend/css/fancy.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/auth.css">
 </head>
 <body>
-  <div class="bg-circle one"></div>
-  <div class="bg-circle two"></div>
-
-  <div class="card">
-    <h2>Welcome Back 💜</h2>
-    <p class="subtitle">Login to your dashboard</p>
-
-    <form id="loginForm">
-      <div class="input-group">
-        <label>Email</label>
-        <input id="email" type="email" placeholder="example@email.com">
+  <div class="brand-panel">
+    <div class="brand-content">
+      <div class="brand-logo">IDMS</div>
+      <h1 class="brand-title">Identity Management System</h1>
+      <p class="brand-subtitle">Secure access control and user management for your organisation.</p>
+      <div class="brand-features">
+        <div class="feature-item">
+          <span class="feature-icon">&#10003;</span> Role-based access control
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">&#10003;</span> Encrypted authentication
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">&#10003;</span> Real-time user management
+        </div>
       </div>
+    </div>
+  </div>
 
-      <div class="input-group">
-        <label>Password</label>
-        <input id="password" type="password" placeholder="••••••">
+  <div class="form-panel">
+    <div class="form-container">
+      <h2 class="form-title">Welcome back</h2>
+      <p class="form-subtitle">Sign in to your account to continue</p>
+
+      <form id="loginForm">
+        <div class="input-group">
+          <label>Email address</label>
+          <input id="email" type="email" placeholder="you@example.com">
+        </div>
+
+        <div class="input-group">
+          <label>Password</label>
+          <input id="password" type="password" placeholder="Enter your password">
+        </div>
+
+        <button class="btn" type="submit">Sign In</button>
+        <p id="message" class="message"></p>
+      </form>
+
+      <div class="form-footer">
+        Don't have an account? <a href="/frontend/register.html">Create one</a>
       </div>
-
-      <button class="btn" type="submit">Login</button>
-      <p id="message" class="message"></p>
-    </form>
-
-    <div class="link">
-      New here? <a href="/frontend/register.html">Register</a>
     </div>
   </div>
 

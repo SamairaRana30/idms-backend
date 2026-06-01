@@ -5,44 +5,62 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IDMS | Register</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/frontend/css/fancy.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/auth.css">
 </head>
 <body>
-  <div class="bg-circle one"></div>
-  <div class="bg-circle two"></div>
-
-  <div class="card">
-    <h2>Create Account</h2>
-    <p class="subtitle">Start your digital journey ✨</p>
-
-    <form id="registerForm">
-      <div class="input-group">
-        <label>Full Name</label>
-        <input id="name" placeholder="John Doe">
+  <div class="brand-panel">
+    <div class="brand-content">
+      <div class="brand-logo">IDMS</div>
+      <h1 class="brand-title">Identity Management System</h1>
+      <p class="brand-subtitle">Join the platform built for secure, scalable identity management.</p>
+      <div class="brand-features">
+        <div class="feature-item">
+          <span class="feature-icon">&#10003;</span> Instant account setup
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">&#10003;</span> Bcrypt password encryption
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">&#10003;</span> JWT-secured sessions
+        </div>
       </div>
+    </div>
+  </div>
 
-      <div class="input-group">
-        <label>Email</label>
-        <input id="email" type="email" placeholder="example@email.com">
+  <div class="form-panel">
+    <div class="form-container">
+      <h2 class="form-title">Create an account</h2>
+      <p class="form-subtitle">Fill in your details to get started</p>
+
+      <form id="registerForm">
+        <div class="input-group">
+          <label>Full name</label>
+          <input id="name" type="text" placeholder="John Doe">
+        </div>
+
+        <div class="input-group">
+          <label>Email address</label>
+          <input id="email" type="email" placeholder="you@example.com">
+        </div>
+
+        <div class="input-group">
+          <label>Password</label>
+          <input id="password" type="password" placeholder="Min. 6 characters">
+        </div>
+
+        <div class="input-group">
+          <label>Confirm password</label>
+          <input id="confirmPassword" type="password" placeholder="Repeat your password">
+        </div>
+
+        <button class="btn" type="submit">Create Account</button>
+        <p id="message" class="message"></p>
+      </form>
+
+      <div class="form-footer">
+        Already have an account? <a href="/frontend/login.html">Sign in</a>
       </div>
-
-      <div class="input-group">
-        <label>Password</label>
-        <input id="password" type="password" placeholder="••••••">
-      </div>
-
-      <div class="input-group">
-        <label>Confirm Password</label>
-        <input id="confirmPassword" type="password" placeholder="••••••">
-      </div>
-
-      <button class="btn" type="submit">Register</button>
-      <p id="message" class="message"></p>
-    </form>
-
-    <div class="link">
-      Already registered? <a href="/frontend/login.html">Login</a>
     </div>
   </div>
 
