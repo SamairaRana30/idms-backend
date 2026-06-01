@@ -490,14 +490,20 @@
     }
 
     // ── Init ──────────────────────────────────────────────────────────────────
-    loadProfile();
-    if (getRole() === 'admin') {
-      document.getElementById('memberDirCard').style.display  = 'block';
-      document.getElementById('auditCard').style.display      = 'block';
-      document.getElementById('migrationCard').style.display  = 'block';
-      loadMembers();
-      loadAuditLog();
+    // Load profile first, then show admin sections based on API response
+    async function init() {
+      await loadProfile();
+      const role = localStorage.getItem('role');
+      if (role === 'admin') {
+        document.getElementById('memberDirCard').style.display = 'block';
+        document.getElementById('auditCard').style.display     = 'block';
+        document.getElementById('migrationCard').style.display = 'block';
+        document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
+        loadMembers();
+        loadAuditLog();
+      }
     }
+    init();
   </script>
 </body>
 </html>
