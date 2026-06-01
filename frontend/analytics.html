@@ -8,6 +8,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <style>
+    .drop-zone {
+      border: 2px dashed #c7d2fe;
+      border-radius: 12px;
+      padding: 36px;
+      text-align: center;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    .drop-zone.over { border-color: #4f46e5; background: #f0f0fb; }
+    .sentiment-bar { height: 10px; border-radius: 20px; background: #e2e8f0; overflow: hidden; margin-top: 4px; }
+    .sentiment-fill { height: 100%; border-radius: 20px; transition: width .6s ease; }
+  </style>
 </head>
 <body>
 
@@ -36,13 +50,31 @@
   </div>
 
   <div class="main">
-    <div class="topbar d-flex justify-content-between align-items-center">
+    <div class="topbar">
       <h1>Chat Analytics</h1>
-      <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#analyticsModal">
-        + Upload Report
-      </button>
     </div>
 
+    <!-- Upload Card (admin only) -->
+    <div class="card admin-only" id="uploadCard" style="display:none">
+      <h2 class="card-title">Upload WhatsApp Chat Export</h2>
+      <p class="text-muted mb-3" style="font-size:13px">
+        Export a WhatsApp group chat: <strong>WhatsApp → Chat → Export Chat → Without Media</strong> → upload the .txt file here.
+      </p>
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('chatFile').click()">
+        <div style="font-size:32px;margin-bottom:8px">💬</div>
+        <div id="dropLabel">Drop WhatsApp .txt export here, or click to browse</div>
+        <input type="file" id="chatFile" accept=".txt" style="display:none" onchange="fileChosen(this)">
+      </div>
+      <div id="uploadProgress" class="mt-3" style="display:none">
+        <div class="progress">
+          <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:100%"></div>
+        </div>
+        <small class="text-muted">Analysing messages…</small>
+      </div>
+      <p id="uploadMsg" class="mt-2 text-danger" style="font-size:13px"></p>
+    </div>
+
+    <!-- Latest Stats -->
     <div id="latestStats" class="stats-grid" style="display:none">
       <div class="stat-card">
         <div class="stat-label">Total Messages</div>
@@ -53,11 +85,19 @@
         <div class="stat-value" id="statUsers">—</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Sentiment Score</div>
+        <div class="stat-label">Peak Hour</div>
+        <div class="stat-value" id="statPeak">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Sentiment</div>
         <div class="stat-value" id="statSentiment">—</div>
+        <div class="sentiment-bar mt-2">
+          <div class="sentiment-fill" id="sentimentBar" style="width:50%;background:#4f46e5"></div>
+        </div>
       </div>
     </div>
 
+    <!-- History Table -->
     <div class="card">
       <h2 class="card-title">Upload History</h2>
       <table class="users-table">
@@ -65,58 +105,9 @@
           <tr><th>Date</th><th>Messages</th><th>Active Users</th><th>Peak Hour</th><th>Sentiment</th><th>Text</th><th>Media</th><th>Uploaded By</th></tr>
         </thead>
         <tbody id="analyticsTableBody">
-          <tr><td colspan="8" class="text-center text-muted py-4">Loading...</td></tr>
+          <tr><td colspan="8" class="text-center text-muted py-4">Loading…</td></tr>
         </tbody>
       </table>
-    </div>
-  </div>
-
-  <!-- Upload Modal -->
-  <div class="modal fade" id="analyticsModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Upload Analytics Report</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row g-2">
-            <div class="col-6">
-              <label class="form-label">Upload Date</label>
-              <input id="aDate" type="date" class="form-control">
-            </div>
-            <div class="col-6">
-              <label class="form-label">Total Messages</label>
-              <input id="aMessages" type="number" class="form-control">
-            </div>
-            <div class="col-6">
-              <label class="form-label">Active Users</label>
-              <input id="aUsers" type="number" class="form-control">
-            </div>
-            <div class="col-6">
-              <label class="form-label">Peak Hour (0–23)</label>
-              <input id="aPeak" type="number" min="0" max="23" class="form-control">
-            </div>
-            <div class="col-6">
-              <label class="form-label">Sentiment Score</label>
-              <input id="aSentiment" type="number" step="0.01" class="form-control" placeholder="-1 to 1">
-            </div>
-            <div class="col-6">
-              <label class="form-label">Text Messages</label>
-              <input id="aText" type="number" class="form-control">
-            </div>
-            <div class="col-12">
-              <label class="form-label">Media Messages</label>
-              <input id="aMedia" type="number" class="form-control">
-            </div>
-          </div>
-          <p id="analyticsMsg" class="text-danger mt-2"></p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-primary" onclick="uploadAnalytics()">Upload</button>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -124,19 +115,82 @@
   <script src="/frontend/js/api.js"></script>
   <script src="/frontend/js/main.js"></script>
   <script>
+    // Drag-and-drop
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+    dropZone.addEventListener('drop',      e => {
+      e.preventDefault();
+      dropZone.classList.remove('over');
+      const f = e.dataTransfer.files[0];
+      if (f) uploadFile(f);
+    });
+
+    function fileChosen(input) {
+      if (input.files[0]) uploadFile(input.files[0]);
+    }
+
+    async function uploadFile(file) {
+      document.getElementById('uploadMsg').innerText      = '';
+      document.getElementById('dropLabel').innerText      = `Analysing: ${file.name}…`;
+      document.getElementById('uploadProgress').style.display = 'block';
+
+      const fd = new FormData();
+      fd.append('file', file);
+
+      const res = await fetch('/api/v1/analytics/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: fd
+      }).then(r => r.json());
+
+      document.getElementById('uploadProgress').style.display = 'none';
+      document.getElementById('dropLabel').innerText = 'Drop WhatsApp .txt export here, or click to browse';
+      document.getElementById('chatFile').value = '';
+
+      if (res.success) {
+        document.getElementById('uploadMsg').className = 'mt-2 text-success';
+        document.getElementById('uploadMsg').innerText =
+          `✓ Analysed ${res.data.stats.total_messages} messages from ${res.data.stats.active_users} users`;
+        loadAnalytics();
+      } else {
+        document.getElementById('uploadMsg').className = 'mt-2 text-danger';
+        document.getElementById('uploadMsg').innerText = res.error || 'Upload failed';
+      }
+    }
+
+    function sentimentLabel(score) {
+      if (score >= 0.05)  return `Positive (${score})`;
+      if (score <= -0.05) return `Negative (${score})`;
+      return `Neutral (${score})`;
+    }
+
+    function sentimentColor(score) {
+      if (score >= 0.05)  return '#16a34a';
+      if (score <= -0.05) return '#dc2626';
+      return '#f59e0b';
+    }
+
     async function loadAnalytics() {
-      const res = await apiGetAnalytics();
+      const res   = await apiGetAnalytics();
       const tbody = document.getElementById('analyticsTableBody');
+
       if (!res.success || !res.data.analytics.length) {
         tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No analytics uploaded yet</td></tr>';
         return;
       }
 
       const latest = res.data.analytics[0];
-      document.getElementById('latestStats').style.display = 'grid';
-      document.getElementById('statMessages').innerText  = latest.total_messages;
-      document.getElementById('statUsers').innerText     = latest.active_users;
-      document.getElementById('statSentiment').innerText = parseFloat(latest.sentiment_score).toFixed(2);
+      document.getElementById('latestStats').style.display  = 'grid';
+      document.getElementById('statMessages').innerText     = latest.total_messages;
+      document.getElementById('statUsers').innerText        = latest.active_users;
+      document.getElementById('statPeak').innerText         = `${latest.peak_hour}:00`;
+      document.getElementById('statSentiment').innerText    = sentimentLabel(parseFloat(latest.sentiment_score).toFixed(2));
+
+      const score = parseFloat(latest.sentiment_score);
+      const pct   = Math.round((score + 1) / 2 * 100);
+      document.getElementById('sentimentBar').style.width      = `${pct}%`;
+      document.getElementById('sentimentBar').style.background = sentimentColor(score);
 
       tbody.innerHTML = res.data.analytics.map(a => `
         <tr>
@@ -144,33 +198,25 @@
           <td>${a.total_messages}</td>
           <td>${a.active_users}</td>
           <td>${a.peak_hour}:00</td>
-          <td>${parseFloat(a.sentiment_score).toFixed(2)}</td>
+          <td style="color:${sentimentColor(parseFloat(a.sentiment_score))};font-weight:600">
+            ${parseFloat(a.sentiment_score).toFixed(2)}
+          </td>
           <td>${a.text_count}</td>
           <td>${a.media_count}</td>
-          <td>${a.uploaded_by_name}</td>
+          <td>${a.uploaded_by_name || '—'}</td>
         </tr>
       `).join('');
     }
 
-    async function uploadAnalytics() {
-      const data = await apiUploadAnalytics({
-        upload_date:     document.getElementById('aDate').value,
-        total_messages:  parseInt(document.getElementById('aMessages').value),
-        active_users:    parseInt(document.getElementById('aUsers').value),
-        peak_hour:       parseInt(document.getElementById('aPeak').value),
-        sentiment_score: parseFloat(document.getElementById('aSentiment').value),
-        text_count:      parseInt(document.getElementById('aText').value),
-        media_count:     parseInt(document.getElementById('aMedia').value)
-      });
-      if (data.success) {
-        bootstrap.Modal.getInstance(document.getElementById('analyticsModal')).hide();
-        loadAnalytics();
-      } else {
-        document.getElementById('analyticsMsg').innerText = data.error;
+    async function init() {
+      const meRes = await apiGetMe();
+      if (meRes.success && meRes.data.user.role === 'admin') {
+        document.getElementById('uploadCard').style.display = 'block';
       }
+      loadAnalytics();
     }
 
-    loadAnalytics();
+    init();
   </script>
 </body>
 </html>

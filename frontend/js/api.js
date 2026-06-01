@@ -264,9 +264,9 @@ async function apiGetAnalytics(page = 1, limit = 20) {
     return r.json();
 }
 
-async function apiUploadAnalytics(data) {
-    const r = await fetch(`${API}/analytics`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(data)
+async function apiUploadAnalytics(formData) {
+    const r = await fetch(`${API}/analytics/upload`, {
+        method: 'POST', headers: authHeadersNoContent(), body: formData
     });
     return r.json();
 }
