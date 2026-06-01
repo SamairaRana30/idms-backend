@@ -171,6 +171,25 @@ def get_history():
         close_db(conn, cur)
 
 
+@analytics_bp.route('/<record_id>', methods=['DELETE'])
+@require_auth
+@require_admin
+def delete_analytics(record_id):
+    conn = cur = None
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+        cur.execute("DELETE FROM chat_analytics WHERE id = %s", (record_id,))
+        conn.commit()
+        return success({'message': 'Record deleted'})
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return error(str(e), 500)
+    finally:
+        close_db(conn, cur)
+
+
 @analytics_bp.route('', methods=['GET'])
 @require_auth
 def list_analytics():

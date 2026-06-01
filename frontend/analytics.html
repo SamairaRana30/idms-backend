@@ -90,8 +90,8 @@
     <div class="card">
       <h2 class="card-title">Upload History</h2>
       <table class="users-table">
-        <thead><tr><th>Date</th><th>Messages</th><th>Active Users</th><th>Peak Hour</th><th>Sentiment</th><th>Text</th><th>Media</th><th>Uploaded By</th></tr></thead>
-        <tbody id="historyBody"><tr><td colspan="8" class="text-center text-muted py-4">Loading…</td></tr></tbody>
+        <thead><tr><th>Date</th><th>Messages</th><th>Active Users</th><th>Peak Hour</th><th>Sentiment</th><th>Text</th><th>Media</th><th>Uploaded By</th><th class="admin-only"></th></tr></thead>
+        <tbody id="historyBody"><tr><td colspan="9" class="text-center text-muted py-4">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -203,9 +203,10 @@
 
       const tbody = document.getElementById('historyBody');
       if (!res.success || !res.data.analytics.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No analytics uploaded yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No analytics uploaded yet</td></tr>';
         return;
       }
+      const isAdmin = getRole() === 'admin';
       tbody.innerHTML = res.data.analytics.map(a => `
         <tr>
           <td>${new Date(a.upload_date).toLocaleDateString()}</td>
@@ -214,7 +215,17 @@
           <td style="color:${sentimentColor(parseFloat(a.sentiment_score))};font-weight:600">${parseFloat(a.sentiment_score).toFixed(2)}</td>
           <td>${a.text_count}</td><td>${a.media_count}</td>
           <td>${a.uploaded_by_name||'—'}</td>
+          <td>${isAdmin ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteAnalytics('${a.id}')">Delete</button>` : ''}</td>
         </tr>`).join('');
+    }
+
+    async function deleteAnalytics(id) {
+      if (!confirm('Delete this analytics record?')) return;
+      const res = await fetch(`/api/v1/analytics/${id}`, {
+        method: 'DELETE', headers: {'Authorization':`Bearer ${localStorage.getItem('token')}`}
+      }).then(r=>r.json());
+      if (res.success) { loadHistory(); loadLatest(); }
+      else alert(res.error);
     }
 
     async function init() {
