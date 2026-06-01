@@ -260,13 +260,36 @@ async function apiGetAuditLog(page = 1, limit = 20) {
 
 // ── Analytics ─────────────────────────────────────────────────────────────────
 async function apiGetAnalytics(page = 1, limit = 20) {
-    const r = await fetch(`${API}/analytics?page=${page}&limit=${limit}`, { headers: authHeaders() });
+    const r = await fetch(`${API}/analytics/history?page=${page}&limit=${limit}`, { headers: authHeaders() });
+    return r.json();
+}
+
+async function apiGetAnalyticsLatest() {
+    const r = await fetch(`${API}/analytics/latest`, { headers: authHeaders() });
     return r.json();
 }
 
 async function apiUploadAnalytics(formData) {
     const r = await fetch(`${API}/analytics/upload`, {
         method: 'POST', headers: authHeadersNoContent(), body: formData
+    });
+    return r.json();
+}
+
+// ── Finances (extras) ─────────────────────────────────────────────────────────
+async function apiGetFinanceSummary() {
+    const r = await fetch(`${API}/finances/summary`, { headers: authHeaders() });
+    return r.json();
+}
+
+async function apiGetFinanceReport() {
+    const r = await fetch(`${API}/finances/report`, { headers: authHeaders() });
+    return r.json();
+}
+
+async function apiEditFinanceRecord(id, data) {
+    const r = await fetch(`${API}/finances/${id}`, {
+        method: 'PUT', headers: authHeaders(), body: JSON.stringify(data)
     });
     return r.json();
 }

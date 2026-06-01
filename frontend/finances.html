@@ -8,28 +8,29 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <style>
+    .filter-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; align-items:flex-end; }
+    .filter-row label { font-size:12px; font-weight:600; color:#64748b; display:block; margin-bottom:3px; text-transform:uppercase; }
+    .filter-row input, .filter-row select { font-size:13px; }
+  </style>
 </head>
 <body>
-
   <div class="sidebar">
     <div class="sidebar-logo">IDMS</div>
     <nav>
-      <a href="/frontend/dashboard.html"      class="nav-item">Dashboard</a>
-      <a href="/frontend/members.html"        class="nav-item admin-only">Members</a>
-      <a href="/frontend/documents.html"      class="nav-item">Documents</a>
-      <a href="/frontend/voting.html"         class="nav-item">Voting</a>
-      <a href="/frontend/meetings.html"       class="nav-item">Meetings</a>
-      <a href="/frontend/finances.html"       class="nav-item">Finances</a>
-      <a href="/frontend/notifications.html"  class="nav-item">Notifications</a>
-      <a href="/frontend/analytics.html"      class="nav-item admin-only">Analytics</a>
+      <a href="/frontend/dashboard.html"     class="nav-item">Dashboard</a>
+      <a href="/frontend/members.html"       class="nav-item admin-only">Members</a>
+      <a href="/frontend/documents.html"     class="nav-item">Documents</a>
+      <a href="/frontend/voting.html"        class="nav-item">Voting</a>
+      <a href="/frontend/meetings.html"      class="nav-item">Meetings</a>
+      <a href="/frontend/finances.html"      class="nav-item">Finances</a>
+      <a href="/frontend/notifications.html" class="nav-item">Notifications</a>
+      <a href="/frontend/analytics.html"     class="nav-item admin-only">Analytics</a>
     </nav>
     <div class="sidebar-footer">
       <div class="user-info">
         <div class="avatar" id="avatarInitial"></div>
-        <div>
-          <div class="user-email" id="sidebarEmail"></div>
-          <div class="user-role"  id="sidebarRole"></div>
-        </div>
+        <div><div class="user-email" id="sidebarEmail"></div><div class="user-role" id="sidebarRole"></div></div>
       </div>
       <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
@@ -38,130 +39,262 @@
   <div class="main">
     <div class="topbar d-flex justify-content-between align-items-center">
       <h1>Finances</h1>
-      <button class="btn btn-primary btn-sm admin-only" style="display:none"
-              data-bs-toggle="modal" data-bs-target="#financeModal">+ Add Record</button>
-    </div>
-
-    <div class="stats-grid" id="summaryGrid">
-      <div class="stat-card">
-        <div class="stat-label">Total Income</div>
-        <div class="stat-value text-success" id="totalIncome">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Expense</div>
-        <div class="stat-value text-danger" id="totalExpense">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Balance</div>
-        <div class="stat-value" id="balance">—</div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" onclick="exportCSV()">Export CSV</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="exportPDF()">Export PDF</button>
+        <button class="btn btn-primary btn-sm admin-only" style="display:none" data-bs-toggle="modal" data-bs-target="#financeModal">+ Add Record</button>
       </div>
     </div>
 
+    <!-- Summary cards -->
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Income</div><div class="stat-value text-success" id="totalIncome">—</div></div>
+      <div class="stat-card"><div class="stat-label">Total Expenses</div><div class="stat-value text-danger" id="totalExpense">—</div></div>
+      <div class="stat-card"><div class="stat-label">Balance</div><div class="stat-value" id="balance">—</div></div>
+    </div>
+
+    <!-- Charts -->
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px">
+      <div class="card"><h2 class="card-title">Monthly Income vs Expenses</h2><canvas id="monthlyChart" style="max-height:240px"></canvas></div>
+      <div class="card"><h2 class="card-title">Income vs Expenses</h2><canvas id="pieChart" style="max-height:240px"></canvas></div>
+    </div>
+
+    <!-- Filters + Table -->
     <div class="card">
       <h2 class="card-title">Transaction History</h2>
+      <div class="filter-row">
+        <div>
+          <label>Type</label>
+          <select id="filterType" class="form-select form-select-sm" onchange="loadFinances()" style="min-width:110px">
+            <option value="">All</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+        <div>
+          <label>From</label>
+          <input id="filterFrom" type="date" class="form-control form-control-sm" onchange="loadFinances()">
+        </div>
+        <div>
+          <label>To</label>
+          <input id="filterTo" type="date" class="form-control form-control-sm" onchange="loadFinances()">
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">Clear</button>
+      </div>
       <table class="users-table">
-        <thead>
-          <tr><th>Type</th><th>Amount</th><th>Description</th><th>Date</th><th>Recorded By</th><th class="admin-only"></th></tr>
-        </thead>
-        <tbody id="financeTableBody">
-          <tr><td colspan="6" class="text-center text-muted py-4">Loading...</td></tr>
-        </tbody>
+        <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Category</th><th>Description</th><th>Recorded By</th><th class="admin-only"></th></tr></thead>
+        <tbody id="financeTableBody"><tr><td colspan="7" class="text-center text-muted py-4">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
 
-  <!-- Add Record Modal -->
+  <!-- Add/Edit Modal -->
   <div class="modal fade" id="financeModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Add Finance Record</h5>
+          <h5 class="modal-title" id="financeModalTitle">Add Finance Record</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Type</label>
-            <select id="finType" class="form-select">
-              <option value="income">Income</option>
-              <option value="expense">Expense</option>
+          <input type="hidden" id="editRecordId">
+          <ul class="nav nav-tabs mb-3" id="finTabs">
+            <li class="nav-item"><button class="nav-link active" data-type="income"  onclick="setType('income',this)">Income</button></li>
+            <li class="nav-item"><button class="nav-link"        data-type="expense" onclick="setType('expense',this)">Expense</button></li>
+          </ul>
+          <input type="hidden" id="finType" value="income">
+          <div class="mb-3"><label class="form-label">Amount (£)</label><input id="finAmount" type="number" step="0.01" class="form-control" placeholder="0.00"></div>
+          <div class="mb-3"><label class="form-label">Category</label>
+            <select id="finCategory" class="form-select">
+              <option value="">— Select —</option>
+              <option>Membership Fees</option><option>Events</option><option>Grants</option>
+              <option>Equipment</option><option>Travel</option><option>Food</option>
+              <option>Marketing</option><option>Other</option>
             </select>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Amount (£)</label>
-            <input id="finAmount" type="number" step="0.01" class="form-control" placeholder="0.00">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Description</label>
-            <input id="finDesc" class="form-control" placeholder="Description">
-          </div>
-          <p id="finMsg" class="text-danger"></p>
+          <div class="mb-3"><label class="form-label">Description</label><input id="finDesc" class="form-control" placeholder="Description"></div>
+          <div class="mb-3"><label class="form-label">Transaction Date</label><input id="finDate" type="date" class="form-control"></div>
+          <p id="finMsg" class="text-danger" style="font-size:13px"></p>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-primary" onclick="addRecord()">Save</button>
+          <button class="btn btn-primary" onclick="saveRecord()">Save</button>
         </div>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="/frontend/js/api.js"></script>
   <script src="/frontend/js/main.js"></script>
   <script>
+    let monthlyChart = null, pieChart = null;
+    let allRecords = [];
+
+    function setType(type, btn) {
+      document.getElementById('finType').value = type;
+      document.querySelectorAll('#finTabs .nav-link').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function clearFilters() {
+      document.getElementById('filterType').value = '';
+      document.getElementById('filterFrom').value = '';
+      document.getElementById('filterTo').value   = '';
+      loadFinances();
+    }
+
     async function loadFinances() {
-      const res = await apiGetFinances();
+      const type = document.getElementById('filterType').value;
+      const from = document.getElementById('filterFrom').value;
+      const to   = document.getElementById('filterTo').value;
+
+      const params = new URLSearchParams({ page:1, limit:100 });
+      if (type) params.set('type', type);
+      if (from) params.set('from', from);
+      if (to)   params.set('to', to);
+
+      const res = await fetch(`/api/v1/finances?${params}`, { headers: authHeaders() }).then(r=>r.json());
       if (!res.success) return;
 
-      const s = res.data.summary;
+      allRecords = res.data.records;
+      const s    = res.data.summary;
+      const isAdmin = getRole() === 'admin';
+
       document.getElementById('totalIncome').innerText  = `£${s.total_income.toFixed(2)}`;
       document.getElementById('totalExpense').innerText = `£${s.total_expense.toFixed(2)}`;
-      const balanceEl = document.getElementById('balance');
-      balanceEl.innerText = `£${s.balance.toFixed(2)}`;
-      balanceEl.style.color = s.balance >= 0 ? '#16a34a' : '#dc2626';
+      const balEl = document.getElementById('balance');
+      balEl.innerText    = `£${s.balance.toFixed(2)}`;
+      balEl.style.color  = s.balance >= 0 ? '#16a34a' : '#dc2626';
 
       const tbody = document.getElementById('financeTableBody');
-      if (!res.data.records.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No records yet</td></tr>';
-        return;
-      }
-      tbody.innerHTML = res.data.records.map(r => `
-        <tr>
-          <td><span class="badge ${r.type === 'income' ? 'badge-active' : 'badge-inactive'}">${r.type}</span></td>
-          <td><strong>£${parseFloat(r.amount).toFixed(2)}</strong></td>
-          <td>${r.description || '—'}</td>
-          <td>${new Date(r.created_at).toLocaleDateString()}</td>
-          <td>${r.recorded_by_name}</td>
-          <td class="admin-only">
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord('${r.id}')">Delete</button>
-          </td>
-        </tr>
-      `).join('');
-
-      // Show admin delete column header
-      if (getRole() === 'admin') {
-        document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
-      }
-    }
-
-    async function addRecord() {
-      const data = await apiAddFinanceRecord({
-        type:        document.getElementById('finType').value,
-        amount:      parseFloat(document.getElementById('finAmount').value),
-        description: document.getElementById('finDesc').value.trim()
-      });
-      if (data.success) {
-        bootstrap.Modal.getInstance(document.getElementById('financeModal')).hide();
-        loadFinances();
+      if (!allRecords.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No records yet</td></tr>';
       } else {
-        document.getElementById('finMsg').innerText = data.error;
+        tbody.innerHTML = allRecords.map(r => `
+          <tr>
+            <td>${r.date ? new Date(r.date).toLocaleDateString() : '—'}</td>
+            <td><span class="badge ${r.type==='income'?'badge-active':'badge-inactive'}">${r.type}</span></td>
+            <td><strong>£${parseFloat(r.amount).toFixed(2)}</strong></td>
+            <td>${r.category||'—'}</td>
+            <td>${r.description||'—'}</td>
+            <td>${r.recorded_by_name||'—'}</td>
+            <td class="admin-only" ${isAdmin?'':' style="display:none"'}>
+              <button class="btn btn-sm btn-outline-primary me-1" onclick="openEdit('${r.id}','${r.type}','${r.amount}','${r.category||''}','${(r.description||'').replace(/'/g,"\\'")}','${r.date||''}')">Edit</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteRec('${r.id}')">Delete</button>
+            </td>
+          </tr>`).join('');
       }
+
+      loadCharts(s, res.data.records);
     }
 
-    async function deleteRecord(id) {
+    async function loadCharts(summary, records) {
+      // Pie
+      if (pieChart) pieChart.destroy();
+      pieChart = new Chart(document.getElementById('pieChart'), {
+        type: 'doughnut',
+        data: { labels:['Income','Expenses'], datasets:[{ data:[summary.total_income, summary.total_expense], backgroundColor:['#10b981','#ef4444'], borderWidth:0 }] },
+        options: { responsive:true, plugins:{ legend:{ position:'bottom' } } }
+      });
+
+      // Monthly chart
+      const reportRes = await fetch('/api/v1/finances/report', { headers: authHeaders() }).then(r=>r.json());
+      if (!reportRes.success) return;
+      const breakdown = reportRes.data.breakdown.slice(0,6).reverse();
+      if (monthlyChart) monthlyChart.destroy();
+      monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+        type: 'bar',
+        data: {
+          labels: breakdown.map(b => b.month),
+          datasets: [
+            { label:'Income',   data: breakdown.map(b=>b.income),  backgroundColor:'#10b981', borderRadius:4 },
+            { label:'Expenses', data: breakdown.map(b=>b.expense), backgroundColor:'#ef4444', borderRadius:4 }
+          ]
+        },
+        options: { responsive:true, scales:{ y:{ beginAtZero:true } } }
+      });
+    }
+
+    function openEdit(id, type, amount, category, desc, date) {
+      document.getElementById('editRecordId').value = id;
+      document.getElementById('finType').value      = type;
+      document.getElementById('finAmount').value    = amount;
+      document.getElementById('finCategory').value  = category;
+      document.getElementById('finDesc').value      = desc;
+      document.getElementById('finDate').value      = date;
+      document.querySelectorAll('#finTabs .nav-link').forEach(b => {
+        b.classList.toggle('active', b.dataset.type === type);
+      });
+      document.getElementById('financeModalTitle').innerText = 'Edit Record';
+      new bootstrap.Modal(document.getElementById('financeModal')).show();
+    }
+
+    async function saveRecord() {
+      const id   = document.getElementById('editRecordId').value;
+      const data = {
+        type:             document.getElementById('finType').value,
+        amount:           parseFloat(document.getElementById('finAmount').value),
+        category:         document.getElementById('finCategory').value,
+        description:      document.getElementById('finDesc').value.trim(),
+        transaction_date: document.getElementById('finDate').value || null
+      };
+      const msg = document.getElementById('finMsg');
+      if (!data.amount) { msg.innerText = 'Amount is required'; return; }
+
+      const res = id
+        ? await fetch(`/api/v1/finances/${id}`, { method:'PUT', headers:authHeaders(), body:JSON.stringify(data) }).then(r=>r.json())
+        : await apiAddFinanceRecord(data);
+
+      if (res.success) {
+        bootstrap.Modal.getInstance(document.getElementById('financeModal')).hide();
+        document.getElementById('editRecordId').value = '';
+        document.getElementById('financeModalTitle').innerText = 'Add Finance Record';
+        loadFinances();
+      } else { msg.innerText = res.error || 'Failed'; }
+    }
+
+    async function deleteRec(id) {
       if (!confirm('Delete this record?')) return;
-      const data = await apiDeleteFinanceRecord(id);
-      if (data.success) loadFinances();
-      else alert(data.error);
+      const res = await apiDeleteFinanceRecord(id);
+      if (res.success) loadFinances(); else alert(res.error);
+    }
+
+    function exportCSV() {
+      if (!allRecords.length) { alert('No records to export'); return; }
+      const rows = [['Date','Type','Amount','Category','Description','Recorded By'],
+        ...allRecords.map(r => [r.date||'', r.type, r.amount, r.category||'', r.description||'', r.recorded_by_name||''])];
+      const csv  = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv'});
+      const a    = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = 'finances.csv'; a.click();
+    }
+
+    function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(16); doc.text('Finance Report - IDMS', 14, 18);
+      doc.setFontSize(11);
+      const inc  = document.getElementById('totalIncome').innerText;
+      const exp  = document.getElementById('totalExpense').innerText;
+      const bal  = document.getElementById('balance').innerText;
+      doc.text(`Total Income: ${inc}   Expenses: ${exp}   Balance: ${bal}`, 14, 28);
+      doc.setFontSize(9);
+      let y = 38;
+      doc.text('Date', 14, y); doc.text('Type',44,y); doc.text('Amount',70,y);
+      doc.text('Category',96,y); doc.text('Description',130,y);
+      y += 5; doc.line(14, y, 196, y); y += 4;
+      allRecords.forEach(r => {
+        if (y > 270) { doc.addPage(); y = 18; }
+        doc.text(r.date||'', 14, y); doc.text(r.type, 44, y);
+        doc.text(`£${parseFloat(r.amount).toFixed(2)}`, 70, y);
+        doc.text((r.category||'').slice(0,15), 96, y);
+        doc.text((r.description||'').slice(0,30), 130, y);
+        y += 7;
+      });
+      doc.save('finances.pdf');
     }
 
     loadFinances();

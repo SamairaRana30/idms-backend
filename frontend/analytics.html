@@ -9,213 +9,222 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/frontend/css/dashboard.css">
   <style>
-    .drop-zone {
-      border: 2px dashed #c7d2fe;
-      border-radius: 12px;
-      padding: 36px;
-      text-align: center;
-      color: #94a3b8;
-      cursor: pointer;
-      transition: border-color .2s, background .2s;
-    }
-    .drop-zone.over { border-color: #4f46e5; background: #f0f0fb; }
-    .sentiment-bar { height: 10px; border-radius: 20px; background: #e2e8f0; overflow: hidden; margin-top: 4px; }
-    .sentiment-fill { height: 100%; border-radius: 20px; transition: width .6s ease; }
+    .drop-zone { border:2px dashed #c7d2fe; border-radius:12px; padding:32px; text-align:center; color:#94a3b8; cursor:pointer; transition:border-color .2s,background .2s; }
+    .drop-zone.over { border-color:#4f46e5; background:#f0f0fb; }
+    .sentiment-bar { height:10px; border-radius:20px; background:#e2e8f0; overflow:hidden; margin-top:6px; }
+    .sentiment-fill { height:100%; border-radius:20px; transition:width .6s; }
+    .chart-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
   </style>
 </head>
 <body>
-
   <div class="sidebar">
     <div class="sidebar-logo">IDMS</div>
     <nav>
-      <a href="/frontend/dashboard.html"      class="nav-item">Dashboard</a>
-      <a href="/frontend/members.html"        class="nav-item admin-only">Members</a>
-      <a href="/frontend/documents.html"      class="nav-item">Documents</a>
-      <a href="/frontend/voting.html"         class="nav-item">Voting</a>
-      <a href="/frontend/meetings.html"       class="nav-item">Meetings</a>
-      <a href="/frontend/finances.html"       class="nav-item">Finances</a>
-      <a href="/frontend/notifications.html"  class="nav-item">Notifications</a>
-      <a href="/frontend/analytics.html"      class="nav-item admin-only">Analytics</a>
+      <a href="/frontend/dashboard.html"     class="nav-item">Dashboard</a>
+      <a href="/frontend/members.html"       class="nav-item admin-only">Members</a>
+      <a href="/frontend/documents.html"     class="nav-item">Documents</a>
+      <a href="/frontend/voting.html"        class="nav-item">Voting</a>
+      <a href="/frontend/meetings.html"      class="nav-item">Meetings</a>
+      <a href="/frontend/finances.html"      class="nav-item">Finances</a>
+      <a href="/frontend/notifications.html" class="nav-item">Notifications</a>
+      <a href="/frontend/analytics.html"     class="nav-item admin-only">Analytics</a>
     </nav>
     <div class="sidebar-footer">
       <div class="user-info">
         <div class="avatar" id="avatarInitial"></div>
-        <div>
-          <div class="user-email" id="sidebarEmail"></div>
-          <div class="user-role"  id="sidebarRole"></div>
-        </div>
+        <div><div class="user-email" id="sidebarEmail"></div><div class="user-role" id="sidebarRole"></div></div>
       </div>
       <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </div>
 
   <div class="main">
-    <div class="topbar">
-      <h1>Chat Analytics</h1>
-    </div>
+    <div class="topbar"><h1>Chat Analytics</h1></div>
 
-    <!-- Upload Card (admin only) -->
+    <!-- Upload (admin) -->
     <div class="card admin-only" id="uploadCard" style="display:none">
-      <h2 class="card-title">Upload WhatsApp Chat Export</h2>
-      <p class="text-muted mb-3" style="font-size:13px">
-        Export a WhatsApp group chat: <strong>WhatsApp → Chat → Export Chat → Without Media</strong> → upload the .txt file here.
-      </p>
+      <h2 class="card-title">Upload WhatsApp Export</h2>
+      <p class="text-muted mb-3" style="font-size:13px">WhatsApp → Chat → Export Chat → Without Media → upload the .txt file</p>
       <div class="drop-zone" id="dropZone" onclick="document.getElementById('chatFile').click()">
         <div style="font-size:32px;margin-bottom:8px">💬</div>
         <div id="dropLabel">Drop WhatsApp .txt export here, or click to browse</div>
         <input type="file" id="chatFile" accept=".txt" style="display:none" onchange="fileChosen(this)">
       </div>
       <div id="uploadProgress" class="mt-3" style="display:none">
-        <div class="progress">
-          <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:100%"></div>
-        </div>
+        <div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:100%"></div></div>
         <small class="text-muted">Analysing messages…</small>
       </div>
-      <p id="uploadMsg" class="mt-2 text-danger" style="font-size:13px"></p>
+      <p id="uploadMsg" class="mt-2" style="font-size:13px"></p>
     </div>
 
-    <!-- Latest Stats -->
-    <div id="latestStats" class="stats-grid" style="display:none">
-      <div class="stat-card">
-        <div class="stat-label">Total Messages</div>
-        <div class="stat-value" id="statMessages">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Active Users</div>
-        <div class="stat-value" id="statUsers">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Peak Hour</div>
-        <div class="stat-value" id="statPeak">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Sentiment</div>
-        <div class="stat-value" id="statSentiment">—</div>
-        <div class="sentiment-bar mt-2">
-          <div class="sentiment-fill" id="sentimentBar" style="width:50%;background:#4f46e5"></div>
+    <!-- Stats -->
+    <div id="statsSection" style="display:none">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Total Messages</div><div class="stat-value" id="statMessages">—</div></div>
+        <div class="stat-card"><div class="stat-label">Active Users</div><div class="stat-value" id="statUsers">—</div></div>
+        <div class="stat-card"><div class="stat-label">Peak Hour</div><div class="stat-value" id="statPeak">—</div></div>
+        <div class="stat-card">
+          <div class="stat-label">Sentiment</div>
+          <div class="stat-value" id="statSentiment" style="font-size:18px">—</div>
+          <div class="sentiment-bar mt-2"><div class="sentiment-fill" id="sentimentFill" style="width:50%"></div></div>
         </div>
       </div>
+
+      <!-- Charts -->
+      <div class="chart-grid">
+        <div class="card"><h2 class="card-title">Text vs Media</h2><canvas id="pieChart" style="max-height:220px"></canvas></div>
+        <div class="card"><h2 class="card-title">Messages by Hour</h2><canvas id="hourChart" style="max-height:220px"></canvas></div>
+      </div>
+
+      <!-- Top Users -->
+      <div class="card">
+        <h2 class="card-title">Top 10 Most Active Users</h2>
+        <table class="users-table">
+          <thead><tr><th>Rank</th><th>Name</th><th>Messages</th></tr></thead>
+          <tbody id="topUsersBody"></tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- History Table -->
+    <!-- History -->
     <div class="card">
       <h2 class="card-title">Upload History</h2>
       <table class="users-table">
-        <thead>
-          <tr><th>Date</th><th>Messages</th><th>Active Users</th><th>Peak Hour</th><th>Sentiment</th><th>Text</th><th>Media</th><th>Uploaded By</th></tr>
-        </thead>
-        <tbody id="analyticsTableBody">
-          <tr><td colspan="8" class="text-center text-muted py-4">Loading…</td></tr>
-        </tbody>
+        <thead><tr><th>Date</th><th>Messages</th><th>Active Users</th><th>Peak Hour</th><th>Sentiment</th><th>Text</th><th>Media</th><th>Uploaded By</th></tr></thead>
+        <tbody id="historyBody"><tr><td colspan="8" class="text-center text-muted py-4">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="/frontend/js/api.js"></script>
   <script src="/frontend/js/main.js"></script>
   <script>
-    // Drag-and-drop
+    let pieChart = null, hourChart = null;
+
     const dropZone = document.getElementById('dropZone');
     dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('over'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
-    dropZone.addEventListener('drop',      e => {
-      e.preventDefault();
-      dropZone.classList.remove('over');
-      const f = e.dataTransfer.files[0];
-      if (f) uploadFile(f);
-    });
-
-    function fileChosen(input) {
-      if (input.files[0]) uploadFile(input.files[0]);
-    }
+    dropZone.addEventListener('drop',      e => { e.preventDefault(); dropZone.classList.remove('over'); if(e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]); });
+    function fileChosen(i) { if(i.files[0]) uploadFile(i.files[0]); }
 
     async function uploadFile(file) {
-      document.getElementById('uploadMsg').innerText      = '';
-      document.getElementById('dropLabel').innerText      = `Analysing: ${file.name}…`;
+      const msg = document.getElementById('uploadMsg');
+      msg.innerText = '';
+      document.getElementById('dropLabel').innerText = `Analysing: ${file.name}…`;
       document.getElementById('uploadProgress').style.display = 'block';
 
       const fd = new FormData();
       fd.append('file', file);
-
       const res = await fetch('/api/v1/analytics/upload', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: fd
-      }).then(r => r.json());
+        method:'POST', headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}, body:fd
+      }).then(r=>r.json());
 
       document.getElementById('uploadProgress').style.display = 'none';
       document.getElementById('dropLabel').innerText = 'Drop WhatsApp .txt export here, or click to browse';
       document.getElementById('chatFile').value = '';
 
       if (res.success) {
-        document.getElementById('uploadMsg').className = 'mt-2 text-success';
-        document.getElementById('uploadMsg').innerText =
-          `✓ Analysed ${res.data.stats.total_messages} messages from ${res.data.stats.active_users} users`;
-        loadAnalytics();
+        msg.className = 'mt-2 text-success';
+        msg.innerText = `✓ Parsed ${res.data.stats.total_messages} messages from ${res.data.stats.active_users} users`;
+        loadLatest();
+        loadHistory();
       } else {
-        document.getElementById('uploadMsg').className = 'mt-2 text-danger';
-        document.getElementById('uploadMsg').innerText = res.error || 'Upload failed';
+        msg.className = 'mt-2 text-danger';
+        msg.innerText = res.error || 'Upload failed';
       }
     }
 
-    function sentimentLabel(score) {
-      if (score >= 0.05)  return `Positive (${score})`;
-      if (score <= -0.05) return `Negative (${score})`;
-      return `Neutral (${score})`;
+    function sentimentLabel(s) {
+      if (s >= 0.05)  return `Positive (${s})`;
+      if (s <= -0.05) return `Negative (${s})`;
+      return `Neutral (${s})`;
+    }
+    function sentimentColor(s) {
+      return s >= 0.05 ? '#16a34a' : s <= -0.05 ? '#dc2626' : '#f59e0b';
     }
 
-    function sentimentColor(score) {
-      if (score >= 0.05)  return '#16a34a';
-      if (score <= -0.05) return '#dc2626';
-      return '#f59e0b';
+    async function loadLatest() {
+      const res = await fetch('/api/v1/analytics/latest', {
+        headers: {'Authorization':`Bearer ${localStorage.getItem('token')}`}
+      }).then(r=>r.json());
+
+      if (!res.success) return;
+      const a = res.data.analytics;
+      document.getElementById('statsSection').style.display = 'block';
+
+      document.getElementById('statMessages').innerText = a.total_messages;
+      document.getElementById('statUsers').innerText    = a.active_users;
+      document.getElementById('statPeak').innerText     = `${a.peak_hour}:00`;
+
+      const score = parseFloat(a.sentiment_score);
+      document.getElementById('statSentiment').innerText    = sentimentLabel(score.toFixed(2));
+      document.getElementById('statSentiment').style.color  = sentimentColor(score);
+      const pct = Math.round((score + 1) / 2 * 100);
+      document.getElementById('sentimentFill').style.width      = `${pct}%`;
+      document.getElementById('sentimentFill').style.background = sentimentColor(score);
+
+      // Pie chart
+      if (pieChart) pieChart.destroy();
+      pieChart = new Chart(document.getElementById('pieChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Text Messages', 'Media Messages'],
+          datasets: [{ data: [a.text_count, a.media_count], backgroundColor: ['#4f46e5','#10b981'], borderWidth: 0 }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+
+      // Hourly bar chart
+      const hourly = a.hourly_data || {};
+      const hours  = Array.from({length:24}, (_,i) => i);
+      if (hourChart) hourChart.destroy();
+      hourChart = new Chart(document.getElementById('hourChart'), {
+        type: 'bar',
+        data: {
+          labels: hours.map(h => `${h}:00`),
+          datasets: [{ label:'Messages', data: hours.map(h => hourly[h] || 0), backgroundColor:'#4f46e5', borderRadius:4 }]
+        },
+        options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}} }
+      });
+
+      // Top users
+      const top = a.top_senders || [];
+      document.getElementById('topUsersBody').innerHTML = top.length
+        ? top.map((u,i) => `<tr><td>${i+1}</td><td>${u.name}</td><td>${u.count}</td></tr>`).join('')
+        : '<tr><td colspan="3" class="text-muted text-center py-3">No data</td></tr>';
     }
 
-    async function loadAnalytics() {
-      const res   = await apiGetAnalytics();
-      const tbody = document.getElementById('analyticsTableBody');
+    async function loadHistory() {
+      const res = await fetch('/api/v1/analytics/history', {
+        headers: {'Authorization':`Bearer ${localStorage.getItem('token')}`}
+      }).then(r=>r.json());
 
+      const tbody = document.getElementById('historyBody');
       if (!res.success || !res.data.analytics.length) {
         tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No analytics uploaded yet</td></tr>';
         return;
       }
-
-      const latest = res.data.analytics[0];
-      document.getElementById('latestStats').style.display  = 'grid';
-      document.getElementById('statMessages').innerText     = latest.total_messages;
-      document.getElementById('statUsers').innerText        = latest.active_users;
-      document.getElementById('statPeak').innerText         = `${latest.peak_hour}:00`;
-      document.getElementById('statSentiment').innerText    = sentimentLabel(parseFloat(latest.sentiment_score).toFixed(2));
-
-      const score = parseFloat(latest.sentiment_score);
-      const pct   = Math.round((score + 1) / 2 * 100);
-      document.getElementById('sentimentBar').style.width      = `${pct}%`;
-      document.getElementById('sentimentBar').style.background = sentimentColor(score);
-
       tbody.innerHTML = res.data.analytics.map(a => `
         <tr>
           <td>${new Date(a.upload_date).toLocaleDateString()}</td>
-          <td>${a.total_messages}</td>
-          <td>${a.active_users}</td>
+          <td>${a.total_messages}</td><td>${a.active_users}</td>
           <td>${a.peak_hour}:00</td>
-          <td style="color:${sentimentColor(parseFloat(a.sentiment_score))};font-weight:600">
-            ${parseFloat(a.sentiment_score).toFixed(2)}
-          </td>
-          <td>${a.text_count}</td>
-          <td>${a.media_count}</td>
-          <td>${a.uploaded_by_name || '—'}</td>
-        </tr>
-      `).join('');
+          <td style="color:${sentimentColor(parseFloat(a.sentiment_score))};font-weight:600">${parseFloat(a.sentiment_score).toFixed(2)}</td>
+          <td>${a.text_count}</td><td>${a.media_count}</td>
+          <td>${a.uploaded_by_name||'—'}</td>
+        </tr>`).join('');
     }
 
     async function init() {
-      const meRes = await apiGetMe();
-      if (meRes.success && meRes.data.user.role === 'admin') {
+      const me = await apiGetMe();
+      if (me.success && me.data.user.role === 'admin') {
         document.getElementById('uploadCard').style.display = 'block';
       }
-      loadAnalytics();
+      loadLatest();
+      loadHistory();
     }
-
     init();
   </script>
 </body>

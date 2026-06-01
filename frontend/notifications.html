@@ -119,17 +119,25 @@
     }
 
     async function sendNotif() {
-      const data = await apiSendNotification({
+      const btn = document.querySelector('#notifModal .btn-primary');
+      btn.disabled = true; btn.innerText = 'Sending…';
+
+      const res = await apiSendNotification({
         type:        document.getElementById('notifType').value,
         target_role: document.getElementById('notifTarget').value,
         title:       document.getElementById('notifTitle').value.trim(),
         body:        document.getElementById('notifBody').value.trim()
       });
-      if (data.success) {
+
+      btn.disabled = false; btn.innerText = 'Send';
+
+      if (res.success) {
+        const sent = res.data.sent_to;
         bootstrap.Modal.getInstance(document.getElementById('notifModal')).hide();
         loadNotifications();
+        setTimeout(() => alert(`Notification sent to ${sent} member${sent!==1?'s':''}`), 400);
       } else {
-        document.getElementById('notifMsg').innerText = data.error;
+        document.getElementById('notifMsg').innerText = res.error || 'Send failed';
       }
     }
 
