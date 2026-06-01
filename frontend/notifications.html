@@ -120,7 +120,11 @@
 
     async function sendNotif() {
       const btn = document.querySelector('#notifModal .btn-primary');
-      btn.disabled = true; btn.innerText = 'Sending…';
+      const msg = document.getElementById('notifMsg');
+      msg.className  = 'text-danger';
+      msg.innerText  = '';
+      btn.disabled   = true;
+      btn.innerText  = 'Sending…';
 
       const res = await apiSendNotification({
         type:        document.getElementById('notifType').value,
@@ -129,15 +133,19 @@
         body:        document.getElementById('notifBody').value.trim()
       });
 
-      btn.disabled = false; btn.innerText = 'Send';
+      btn.disabled  = false;
+      btn.innerText = 'Send';
 
       if (res.success) {
-        const sent = res.data.sent_to;
-        bootstrap.Modal.getInstance(document.getElementById('notifModal')).hide();
+        msg.className = 'text-success';
+        msg.innerText = `✓ Notification saved successfully`;
         loadNotifications();
-        setTimeout(() => alert(`Notification sent to ${sent} member${sent!==1?'s':''}`), 400);
+        setTimeout(() => {
+          bootstrap.Modal.getInstance(document.getElementById('notifModal')).hide();
+          msg.innerText = '';
+        }, 1500);
       } else {
-        document.getElementById('notifMsg').innerText = res.error || 'Send failed';
+        msg.innerText = res.error || 'Send failed';
       }
     }
 
