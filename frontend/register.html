@@ -46,12 +46,18 @@
 
         <div class="input-group">
           <label>Password</label>
-          <input id="password" type="password" placeholder="Min. 8 characters">
+          <div class="pw-wrap">
+            <input id="password" type="password" placeholder="Min. 8 characters">
+            <button type="button" class="pw-toggle" onclick="togglePw('password',this)">👁️</button>
+          </div>
         </div>
 
         <div class="input-group">
           <label>Confirm password</label>
-          <input id="confirmPassword" type="password" placeholder="Repeat your password">
+          <div class="pw-wrap">
+            <input id="confirmPassword" type="password" placeholder="Repeat your password">
+            <button type="button" class="pw-toggle" onclick="togglePw('confirmPassword',this)">👁️</button>
+          </div>
         </div>
 
         <button class="btn" type="submit">Create Account</button>
@@ -64,6 +70,13 @@
     </div>
   </div>
 
+  <script>
+    function togglePw(id, btn) {
+      const input = document.getElementById(id);
+      input.type = input.type === 'password' ? 'text' : 'password';
+      btn.innerText = input.type === 'password' ? '👁️' : '🙈';
+    }
+  </script>
   <script src="/frontend/js/register.js"></script>
 </body>
 </html>

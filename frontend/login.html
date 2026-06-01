@@ -41,7 +41,10 @@
 
         <div class="input-group">
           <label>Password</label>
-          <input id="password" type="password" placeholder="Enter your password">
+          <div class="pw-wrap">
+            <input id="password" type="password" placeholder="Enter your password">
+            <button type="button" class="pw-toggle" onclick="togglePw('password',this)">👁️</button>
+          </div>
         </div>
 
         <button class="btn" type="submit">Sign In</button>
@@ -54,6 +57,13 @@
     </div>
   </div>
 
+  <script>
+    function togglePw(id, btn) {
+      const input = document.getElementById(id);
+      input.type = input.type === 'password' ? 'text' : 'password';
+      btn.innerText = input.type === 'password' ? '👁️' : '🙈';
+    }
+  </script>
   <script src="/frontend/js/login.js"></script>
 </body>
 </html>
