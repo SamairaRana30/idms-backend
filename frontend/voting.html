@@ -137,6 +137,7 @@
               ${b.status === 'draft'  ? `<button class="btn btn-sm btn-success" onclick="openBallot('${b.id}')">Publish</button>` : ''}
               ${b.status === 'open'   ? `<button class="btn btn-sm btn-warning" onclick="closeBallot('${b.id}')">Close</button>` : ''}
               ${b.status === 'closed' ? `<a href="/frontend/voting-detail.html?id=${b.id}&results=1" class="btn btn-sm btn-outline-secondary">Results</a>` : ''}
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteBallot('${b.id}')">Delete</button>
             ` : ''}
           </div>
           ${b.start_date ? `<small class="text-muted d-block mt-2">${new Date(b.start_date).toLocaleDateString()} – ${b.end_date ? new Date(b.end_date).toLocaleDateString() : 'No end date'}</small>` : ''}
@@ -181,6 +182,12 @@
       } else {
         msg.innerText = res.error || 'Failed to create ballot';
       }
+    }
+
+    async function deleteBallot(id) {
+      if (!confirm('Delete this ballot and all its votes? This cannot be undone.')) return;
+      const res = await apiDeleteBallot(id);
+      if (res.success) loadBallots(); else alert(res.error);
     }
 
     async function openBallot(id) {

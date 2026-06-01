@@ -130,6 +130,31 @@ def get_ballot(ballot_id):
         close_db(conn, cur)
 
 
+@voting_bp.route('/<ballot_id>', methods=['DELETE'])
+@require_auth
+@require_admin
+def delete_ballot(ballot_id):
+    conn = cur = None
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+        cur.execute("DELETE FROM ballot_options WHERE ballot_id = %s", (ballot_id,))
+        cur.execute("DELETE FROM votes WHERE ballot_id = %s", (ballot_id,))
+        cur.execute("DELETE FROM ballots WHERE id = %s RETURNING id", (ballot_id,))
+        if not cur.fetchone():
+            conn.rollback()
+            return error('Ballot not found', 404)
+        conn.commit()
+        log_action('ballot.delete', 'ballot', ballot_id, g.user['user_id'])
+        return success({'message': 'Ballot deleted'})
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return error(str(e), 500)
+    finally:
+        close_db(conn, cur)
+
+
 @voting_bp.route('/<ballot_id>/open', methods=['PUT'])
 @require_auth
 @require_admin

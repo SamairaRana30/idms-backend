@@ -152,6 +152,13 @@ async function apiCastVote(ballotId, optionId) {
     return r.json();
 }
 
+async function apiDeleteBallot(ballotId) {
+    const r = await fetch(`${API}/ballots/${ballotId}`, {
+        method: 'DELETE', headers: authHeaders()
+    });
+    return r.json();
+}
+
 async function apiGetBallotResults(ballotId) {
     const r = await fetch(`${API}/ballots/${ballotId}/results`, { headers: authHeaders() });
     return r.json();
