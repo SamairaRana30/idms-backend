@@ -115,39 +115,58 @@ async function apiDeleteDocument(docId) {
 
 // ── Voting ────────────────────────────────────────────────────────────────────
 async function apiGetBallots(page = 1, limit = 20) {
-    const r = await fetch(`${API}/voting/ballots?page=${page}&limit=${limit}`, { headers: authHeaders() });
+    const r = await fetch(`${API}/ballots?page=${page}&limit=${limit}`, { headers: authHeaders() });
     return r.json();
 }
 
 async function apiGetBallot(ballotId) {
-    const r = await fetch(`${API}/voting/ballots/${ballotId}`, { headers: authHeaders() });
+    const r = await fetch(`${API}/ballots/${ballotId}`, { headers: authHeaders() });
     return r.json();
 }
 
 async function apiCreateBallot(data) {
-    const r = await fetch(`${API}/voting/ballots`, {
+    const r = await fetch(`${API}/ballots`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(data)
     });
     return r.json();
 }
 
+async function apiOpenBallot(ballotId) {
+    const r = await fetch(`${API}/ballots/${ballotId}/open`, {
+        method: 'PUT', headers: authHeaders()
+    });
+    return r.json();
+}
+
+async function apiCloseBallot(ballotId) {
+    const r = await fetch(`${API}/ballots/${ballotId}/close`, {
+        method: 'PUT', headers: authHeaders()
+    });
+    return r.json();
+}
+
 async function apiCastVote(ballotId, optionId) {
-    const r = await fetch(`${API}/voting/ballots/${ballotId}/vote`, {
+    const r = await fetch(`${API}/ballots/${ballotId}/vote`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify({ option_id: optionId })
     });
     return r.json();
 }
 
-async function apiUpdateBallotStatus(ballotId, status) {
-    const r = await fetch(`${API}/voting/ballots/${ballotId}/status`, {
-        method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ status })
-    });
+async function apiGetBallotResults(ballotId) {
+    const r = await fetch(`${API}/ballots/${ballotId}/results`, { headers: authHeaders() });
     return r.json();
 }
 
 // ── Meetings ──────────────────────────────────────────────────────────────────
-async function apiGetMeetings(page = 1, limit = 20) {
-    const r = await fetch(`${API}/meetings?page=${page}&limit=${limit}`, { headers: authHeaders() });
+async function apiGetMeetings(page = 1, limit = 50, status = '') {
+    const params = new URLSearchParams({ page, limit });
+    if (status) params.set('status', status);
+    const r = await fetch(`${API}/meetings?${params}`, { headers: authHeaders() });
+    return r.json();
+}
+
+async function apiGetMeeting(meetingId) {
+    const r = await fetch(`${API}/meetings/${meetingId}`, { headers: authHeaders() });
     return r.json();
 }
 
@@ -158,9 +177,30 @@ async function apiCreateMeeting(data) {
     return r.json();
 }
 
-async function apiUpdateMeeting(meetingId, data) {
-    const r = await fetch(`${API}/meetings/${meetingId}`, {
-        method: 'PATCH', headers: authHeaders(), body: JSON.stringify(data)
+async function apiSaveMinutes(meetingId, minutes) {
+    const r = await fetch(`${API}/meetings/${meetingId}/minutes`, {
+        method: 'PUT', headers: authHeaders(), body: JSON.stringify({ minutes })
+    });
+    return r.json();
+}
+
+async function apiCompleteMeeting(meetingId) {
+    const r = await fetch(`${API}/meetings/${meetingId}/complete`, {
+        method: 'PUT', headers: authHeaders()
+    });
+    return r.json();
+}
+
+async function apiArchiveMeeting(meetingId) {
+    const r = await fetch(`${API}/meetings/${meetingId}/archive`, {
+        method: 'PUT', headers: authHeaders()
+    });
+    return r.json();
+}
+
+async function apiSendInvitations(meetingId) {
+    const r = await fetch(`${API}/meetings/${meetingId}/invite`, {
+        method: 'POST', headers: authHeaders()
     });
     return r.json();
 }

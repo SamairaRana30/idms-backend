@@ -8,20 +8,29 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <style>
+    .meeting-card { background:#fff; border-radius:14px; padding:20px 24px; border:1px solid #e2e8f0; margin-bottom:14px; transition:box-shadow .2s; }
+    .meeting-card:hover { box-shadow:0 4px 20px rgba(79,70,229,.1); }
+    .minutes-area { width:100%; border:1.5px solid #e2e8f0; border-radius:10px; padding:12px; font-family:'Poppins',sans-serif; font-size:13px; resize:vertical; min-height:160px; outline:none; }
+    .minutes-area:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.08); }
+    .filter-tabs { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+    .filter-tab { padding:6px 16px; border-radius:20px; border:1.5px solid #e2e8f0; background:#fff; font-size:12px; font-weight:600; cursor:pointer; color:#64748b; transition:all .15s; }
+    .filter-tab.active { background:#4f46e5; border-color:#4f46e5; color:#fff; }
+  </style>
 </head>
 <body>
 
   <div class="sidebar">
     <div class="sidebar-logo">IDMS</div>
     <nav>
-      <a href="/frontend/dashboard.html"      class="nav-item">Dashboard</a>
-      <a href="/frontend/members.html"        class="nav-item admin-only">Members</a>
-      <a href="/frontend/documents.html"      class="nav-item">Documents</a>
-      <a href="/frontend/voting.html"         class="nav-item">Voting</a>
-      <a href="/frontend/meetings.html"       class="nav-item">Meetings</a>
-      <a href="/frontend/finances.html"       class="nav-item">Finances</a>
-      <a href="/frontend/notifications.html"  class="nav-item">Notifications</a>
-      <a href="/frontend/analytics.html"      class="nav-item admin-only">Analytics</a>
+      <a href="/frontend/dashboard.html"     class="nav-item">Dashboard</a>
+      <a href="/frontend/members.html"       class="nav-item admin-only">Members</a>
+      <a href="/frontend/documents.html"     class="nav-item">Documents</a>
+      <a href="/frontend/voting.html"        class="nav-item">Voting</a>
+      <a href="/frontend/meetings.html"      class="nav-item">Meetings</a>
+      <a href="/frontend/finances.html"      class="nav-item">Finances</a>
+      <a href="/frontend/notifications.html" class="nav-item">Notifications</a>
+      <a href="/frontend/analytics.html"     class="nav-item admin-only">Analytics</a>
     </nav>
     <div class="sidebar-footer">
       <div class="user-info">
@@ -39,24 +48,23 @@
     <div class="topbar d-flex justify-content-between align-items-center">
       <h1>Meetings</h1>
       <button class="btn btn-primary btn-sm admin-only" style="display:none"
-              data-bs-toggle="modal" data-bs-target="#meetingModal">+ Schedule Meeting</button>
+              data-bs-toggle="modal" data-bs-target="#scheduleMeetingModal">+ Schedule Meeting</button>
     </div>
 
-    <div class="card">
-      <h2 class="card-title">Upcoming & Past Meetings</h2>
-      <table class="users-table">
-        <thead>
-          <tr><th>Title</th><th>Date & Time</th><th>Location</th><th>Status</th><th>Agenda</th></tr>
-        </thead>
-        <tbody id="meetingsTableBody">
-          <tr><td colspan="5" class="text-center text-muted py-4">Loading...</td></tr>
-        </tbody>
-      </table>
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="setFilter('',this)">All</button>
+      <button class="filter-tab" onclick="setFilter('scheduled',this)">Scheduled</button>
+      <button class="filter-tab" onclick="setFilter('completed',this)">Completed</button>
+      <button class="filter-tab" onclick="setFilter('archived',this)">Archived</button>
+    </div>
+
+    <div id="meetingsContainer">
+      <p class="text-muted">Loading meetings…</p>
     </div>
   </div>
 
-  <!-- Create Meeting Modal -->
-  <div class="modal fade" id="meetingModal" tabindex="-1">
+  <!-- Schedule Meeting Modal -->
+  <div class="modal fade" id="scheduleMeetingModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -66,21 +74,21 @@
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Title</label>
-            <input id="meetTitle" class="form-control" placeholder="Meeting title">
+            <input id="mTitle" class="form-control" placeholder="Meeting title">
           </div>
           <div class="mb-3">
             <label class="form-label">Date & Time</label>
-            <input id="meetDate" type="datetime-local" class="form-control">
+            <input id="mDate" type="datetime-local" class="form-control">
           </div>
           <div class="mb-3">
             <label class="form-label">Location</label>
-            <input id="meetLocation" class="form-control" placeholder="Room / Zoom link">
+            <input id="mLocation" class="form-control" placeholder="Room / Zoom link">
           </div>
           <div class="mb-3">
             <label class="form-label">Agenda</label>
-            <textarea id="meetAgenda" class="form-control" rows="3"></textarea>
+            <textarea id="mAgenda" class="form-control" rows="3"></textarea>
           </div>
-          <p id="meetMsg" class="text-danger"></p>
+          <p id="scheduleMsg" class="text-danger" style="font-size:13px"></p>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -90,43 +98,178 @@
     </div>
   </div>
 
+  <!-- Meeting Detail Modal -->
+  <div class="modal fade" id="meetingDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="detailTitle">Meeting Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-6">
+              <small class="text-muted d-block">DATE & TIME</small>
+              <span id="detailDate" style="font-size:14px"></span>
+            </div>
+            <div class="col-6">
+              <small class="text-muted d-block">LOCATION</small>
+              <span id="detailLocation" style="font-size:14px"></span>
+            </div>
+          </div>
+          <div class="mb-3">
+            <small class="text-muted d-block mb-1">AGENDA</small>
+            <p id="detailAgenda" style="font-size:13px;white-space:pre-wrap;color:#334155"></p>
+          </div>
+          <div id="minutesSection">
+            <small class="text-muted d-block mb-1">MINUTES</small>
+            <textarea id="minutesArea" class="minutes-area" placeholder="Enter meeting minutes here…"></textarea>
+            <button class="btn btn-outline-primary btn-sm mt-2 admin-only" id="saveMinutesBtn" style="display:none" onclick="saveMinutes()">Save Minutes</button>
+          </div>
+          <p id="detailMsg" class="text-success mt-2" style="font-size:13px"></p>
+        </div>
+        <div class="modal-footer flex-wrap gap-2">
+          <div class="me-auto admin-only" id="adminDetailBtns" style="display:none">
+            <button class="btn btn-sm btn-outline-success" id="inviteBtn"   onclick="sendInvites()">Send Invitations</button>
+            <button class="btn btn-sm btn-outline-primary" id="completeBtn" onclick="completeM()">Mark Complete</button>
+            <button class="btn btn-sm btn-outline-secondary" id="archiveBtn" onclick="archiveM()">Archive</button>
+          </div>
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/frontend/js/api.js"></script>
   <script src="/frontend/js/main.js"></script>
   <script>
-    const statusColors = { scheduled: 'primary', completed: 'success', archived: 'secondary' };
+    const STATUS_COLORS = { scheduled: 'primary', completed: 'success', archived: 'secondary' };
+    let currentFilter  = '';
+    let activeMeetingId = null;
+
+    function setFilter(f, btn) {
+      currentFilter = f;
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      loadMeetings();
+    }
 
     async function loadMeetings() {
-      const res = await apiGetMeetings();
-      const tbody = document.getElementById('meetingsTableBody');
+      const res = await apiGetMeetings(1, 50, currentFilter);
+      const container = document.getElementById('meetingsContainer');
       if (!res.success || !res.data.meetings.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No meetings scheduled</td></tr>';
+        container.innerHTML = '<div class="card"><p class="text-muted text-center py-4">No meetings found.</p></div>';
         return;
       }
-      tbody.innerHTML = res.data.meetings.map(m => `
-        <tr>
-          <td><strong>${m.title}</strong></td>
-          <td>${new Date(m.scheduled_at).toLocaleString()}</td>
-          <td>${m.location || '—'}</td>
-          <td><span class="badge bg-${statusColors[m.status]}">${m.status}</span></td>
-          <td style="max-width:200px;white-space:pre-wrap;font-size:12px">${m.agenda || '—'}</td>
-        </tr>
+      const isAdmin = getRole() === 'admin';
+      container.innerHTML = res.data.meetings.map(m => `
+        <div class="meeting-card">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <h5 style="font-size:15px;font-weight:600;margin-bottom:4px">${m.title}</h5>
+              <p class="text-muted mb-0" style="font-size:13px">
+                📅 ${new Date(m.scheduled_at).toLocaleString()}
+                ${m.location ? ` &nbsp;📍 ${m.location}` : ''}
+              </p>
+            </div>
+            <span class="badge bg-${STATUS_COLORS[m.status] || 'secondary'}">${m.status}</span>
+          </div>
+          ${m.agenda ? `<p class="mt-2 mb-0" style="font-size:12px;color:#64748b;white-space:pre-wrap">${m.agenda.slice(0,120)}${m.agenda.length > 120 ? '…' : ''}</p>` : ''}
+          <div class="mt-3">
+            <button class="btn btn-sm btn-outline-primary" onclick="openDetail('${m.id}')">View Details</button>
+          </div>
+        </div>
       `).join('');
     }
 
+    async function openDetail(id) {
+      activeMeetingId = id;
+      const res = await apiGetMeeting(id);
+      if (!res.success) { alert(res.error); return; }
+      const m = res.data.meeting;
+      const isAdmin = getRole() === 'admin';
+
+      document.getElementById('detailTitle').innerText    = m.title;
+      document.getElementById('detailDate').innerText     = new Date(m.scheduled_at).toLocaleString();
+      document.getElementById('detailLocation').innerText = m.location || '—';
+      document.getElementById('detailAgenda').innerText   = m.agenda   || '—';
+      document.getElementById('minutesArea').value        = m.minutes  || '';
+      document.getElementById('detailMsg').innerText      = '';
+
+      if (isAdmin) {
+        document.getElementById('adminDetailBtns').style.display = 'flex';
+        document.getElementById('saveMinutesBtn').style.display  = 'inline-block';
+        // Disable complete/archive based on status
+        document.getElementById('completeBtn').disabled = m.status !== 'scheduled';
+        document.getElementById('archiveBtn').disabled  = m.status === 'archived';
+      }
+
+      new bootstrap.Modal(document.getElementById('meetingDetailModal')).show();
+    }
+
     async function scheduleMeeting() {
-      const data = await apiCreateMeeting({
-        title:        document.getElementById('meetTitle').value.trim(),
-        scheduled_at: document.getElementById('meetDate').value,
-        location:     document.getElementById('meetLocation').value.trim(),
-        agenda:       document.getElementById('meetAgenda').value.trim()
+      const msg = document.getElementById('scheduleMsg');
+      const res = await apiCreateMeeting({
+        title:        document.getElementById('mTitle').value.trim(),
+        scheduled_at: document.getElementById('mDate').value,
+        location:     document.getElementById('mLocation').value.trim(),
+        agenda:       document.getElementById('mAgenda').value.trim()
       });
-      if (data.success) {
-        bootstrap.Modal.getInstance(document.getElementById('meetingModal')).hide();
+      if (res.success) {
+        bootstrap.Modal.getInstance(document.getElementById('scheduleMeetingModal')).hide();
         loadMeetings();
       } else {
-        document.getElementById('meetMsg').innerText = data.error;
+        msg.innerText = res.error || 'Failed to schedule meeting';
       }
+    }
+
+    async function saveMinutes() {
+      const minutes = document.getElementById('minutesArea').value;
+      const res     = await apiSaveMinutes(activeMeetingId, minutes);
+      const msg     = document.getElementById('detailMsg');
+      if (res.success) {
+        msg.innerText      = 'Minutes saved successfully';
+        msg.className      = 'text-success mt-2';
+        setTimeout(() => msg.innerText = '', 3000);
+      } else {
+        msg.innerText = res.error || 'Save failed';
+        msg.className = 'text-danger mt-2';
+      }
+    }
+
+    async function sendInvites() {
+      const btn = document.getElementById('inviteBtn');
+      btn.disabled  = true;
+      btn.innerText = 'Sending…';
+      const res = await apiSendInvitations(activeMeetingId);
+      btn.disabled  = false;
+      btn.innerText = 'Send Invitations';
+      if (res.success) {
+        const { sent, failed } = res.data;
+        document.getElementById('detailMsg').innerText = `Sent: ${sent} | Failed: ${failed}`;
+        document.getElementById('detailMsg').className = sent > 0 ? 'text-success mt-2' : 'text-warning mt-2';
+      } else {
+        document.getElementById('detailMsg').innerText = res.error || 'Could not send invitations';
+        document.getElementById('detailMsg').className = 'text-danger mt-2';
+      }
+    }
+
+    async function completeM() {
+      const res = await apiCompleteMeeting(activeMeetingId);
+      if (res.success) {
+        bootstrap.Modal.getInstance(document.getElementById('meetingDetailModal')).hide();
+        loadMeetings();
+      } else { alert(res.error); }
+    }
+
+    async function archiveM() {
+      if (!confirm('Archive this meeting?')) return;
+      const res = await apiArchiveMeeting(activeMeetingId);
+      if (res.success) {
+        bootstrap.Modal.getInstance(document.getElementById('meetingDetailModal')).hide();
+        loadMeetings();
+      } else { alert(res.error); }
     }
 
     loadMeetings();

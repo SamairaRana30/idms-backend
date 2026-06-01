@@ -23,6 +23,13 @@ class Config:
         'development':'idms_dev',
     }
 
+    # SMTP (for meeting invitations)
+    SMTP_HOST = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+    SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
+    SMTP_USER = os.getenv('SMTP_USER')
+    SMTP_PASS = os.getenv('SMTP_PASS')
+    SMTP_FROM = os.getenv('SMTP_FROM')
+
     @classmethod
     def get_database_url(cls):
         if cls.ENV == 'production':
