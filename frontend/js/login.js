@@ -19,11 +19,10 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
     })
     .then(res => res.json())
     .then(data => {
-        if (data.status === "success") {
-            // Save token & user info
-            localStorage.setItem("token", data.data.token);
-            localStorage.setItem("userName", data.data.name);
-            localStorage.setItem("role", data.data.role);
+        if (data.success) {
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("userName", data.user.email);
+            localStorage.setItem("role", data.user.role);
 
             message.style.color = "green";
             message.innerText = "Login successful! Redirecting...";
@@ -32,7 +31,7 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
                 window.location.href = "/frontend/dashboard.html";
             }, 1000);
         } else {
-            message.innerText = data.message;
+            message.innerText = data.error || "Login failed";
         }
     })
     .catch(() => {

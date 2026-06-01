@@ -1,6 +1,5 @@
-const API_BASE = "https://idms-backend-deu6.onrender.com/api/v1";
+const API_BASE = "/api/v1";
 
-// Register
 export async function register(email, password) {
     const res = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
@@ -10,7 +9,6 @@ export async function register(email, password) {
     return res.json();
 }
 
-// Login
 export async function login(email, password) {
     const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
@@ -20,7 +18,6 @@ export async function login(email, password) {
     return res.json();
 }
 
-// Get all users (requires token)
 export async function getUsers(token) {
     const res = await fetch(`${API_BASE}/users`, {
         method: "GET",
@@ -29,7 +26,6 @@ export async function getUsers(token) {
     return res.json();
 }
 
-// Get current user profile
 export async function getProfile(token) {
     const res = await fetch(`${API_BASE}/auth/profile`, {
         method: "GET",

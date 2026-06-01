@@ -27,18 +27,19 @@ document.getElementById("registerForm").addEventListener("submit", function (e) 
     fetch("/api/v1/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password })
+        body: JSON.stringify({ email, password })
     })
     .then(res => res.json())
     .then(data => {
-        if (data.status === "success") {
+        if (data.success) {
+            localStorage.setItem("userName", name);
             message.style.color = "green";
             message.innerText = "Registration successful! Redirecting...";
             setTimeout(() => {
                 window.location.href = "/frontend/login.html";
             }, 1500);
         } else {
-            message.innerText = data.message;
+            message.innerText = data.error || "Registration failed";
         }
     })
     .catch(() => {

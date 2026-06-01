@@ -1,51 +1,51 @@
 <!DOCTYPE html>
-<html>
-<head><head>
-
-    <div class="input-group">
-      <label>Email</label>
-      <input id="email" placeholder="example@email.com">
-    </div>
-
-    <div class="input-group">
-      <label>Password</label>
-      <input id="password" type="password" placeholder="••••••">
-    </div>
-
-    <div class="input-group">
-      <label>Confirm Password</label>
-      <input id="confirmPassword" type="password" placeholder="••••••">
-    </div>
-
-    <button class="btn">Register</button>
-    <p id="message" class="message"></p>
-
-  </form>
-
-  <div class="link">
-    Already registered?
-    /frontend/login.htmlLogin</a>
-  </div>
-</div>
-
-/frontend/js/register.js
-</body>
-</html>
-``
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IDMS | Register</title>
-  /frontend/css/fancy.css
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/fancy.css">
 </head>
 <body>
+  <div class="bg-circle one"></div>
+  <div class="bg-circle two"></div>
 
-<div class="bg-circle one"></div>
-<div class="bg-circle two"></div>
+  <div class="card">
+    <h2>Create Account</h2>
+    <p class="subtitle">Start your digital journey ✨</p>
 
-<div class="card">
-  <h2>Create Account</h2>
-  <p class="subtitle">Start your digital journey ✨</p>
+    <form id="registerForm">
+      <div class="input-group">
+        <label>Full Name</label>
+        <input id="name" placeholder="John Doe">
+      </div>
 
-  <form id="registerForm">
+      <div class="input-group">
+        <label>Email</label>
+        <input id="email" type="email" placeholder="example@email.com">
+      </div>
 
-    <div class="input-group">
-      <label>Full Name</label>
-      <input id="name" placeholder="John Doe">
+      <div class="input-group">
+        <label>Password</label>
+        <input id="password" type="password" placeholder="••••••">
+      </div>
+
+      <div class="input-group">
+        <label>Confirm Password</label>
+        <input id="confirmPassword" type="password" placeholder="••••••">
+      </div>
+
+      <button class="btn" type="submit">Register</button>
+      <p id="message" class="message"></p>
+    </form>
+
+    <div class="link">
+      Already registered? <a href="/frontend/login.html">Login</a>
+    </div>
+  </div>
+
+  <script src="/frontend/js/register.js"></script>
+</body>
+</html>

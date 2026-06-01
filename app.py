@@ -2,7 +2,7 @@ import os
 import base64
 import bcrypt
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 
 from flask import Flask, request, jsonify, g
@@ -15,10 +15,10 @@ from dotenv import load_dotenv
 # Load environment variables from .env
 load_dotenv()
 
-print("Loaded DEV_DATABASE_URL:", os.getenv("DEV_DATABASE_URL"))
-
 app = Flask(__name__)
-CORS(app)
+
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5000,http://127.0.0.1:5000").split(",")
+CORS(app, resources={r"/api/*": {"origins": allowed_origins}})
 
 # JWT secret
 jwt_secret = os.getenv('JWT_SECRET')
@@ -165,7 +165,7 @@ def login():
                 'user_id': user['id'],
                 'email': user['email'],
                 'role': user['role'],
-                'exp': datetime.utcnow() + timedelta(hours=24)
+                'exp': datetime.now(timezone.utc) + timedelta(hours=24)
             }, app.config['JWT_SECRET'], algorithm='HS256')
 
             return jsonify({
@@ -232,7 +232,9 @@ def register():
 @app.route('/api/v1/users', methods=['GET'])
 @token_required
 def get_users():
-    """Get all users (protected endpoint)"""
+    """Get all users (admin only)"""
+    if g.user.get('role') != 'admin':
+        return jsonify({'success': False, 'error': 'Admin access required'}), 403
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)

@@ -1,11 +1,11 @@
 const token = localStorage.getItem("token");
-const name = localStorage.getItem("name");
+const userName = localStorage.getItem("userName");
 
 if (!token) {
   window.location.href = "/frontend/login.html";
 }
 
-document.getElementById("welcome").innerText = `Hello, ${name}! 💖`;
+document.getElementById("welcome").innerText = `Hello, ${userName || "User"}!`;
 
 function logout() {
   localStorage.clear();
