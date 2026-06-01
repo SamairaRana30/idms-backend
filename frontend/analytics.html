@@ -11,9 +11,15 @@
   <style>
     .drop-zone { border:2px dashed #c7d2fe; border-radius:12px; padding:32px; text-align:center; color:#94a3b8; cursor:pointer; transition:border-color .2s,background .2s; }
     .drop-zone.over { border-color:#4f46e5; background:#f0f0fb; }
+    .chart-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
     .sentiment-bar { height:10px; border-radius:20px; background:#e2e8f0; overflow:hidden; margin-top:6px; }
     .sentiment-fill { height:100%; border-radius:20px; transition:width .6s; }
-    .chart-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .section-title { font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.8px; margin-bottom:16px; }
+    .highlight-card { padding:14px 16px; border-radius:10px; margin-bottom:10px; font-size:13px; }
+    .highlight-positive { background:#f0fdf4; border-left:4px solid #16a34a; }
+    .highlight-negative { background:#fff1f2; border-left:4px solid #dc2626; }
+    .spam-item { padding:10px 14px; border-radius:8px; background:#fff7ed; border-left:4px solid #f59e0b; margin-bottom:8px; font-size:12px; }
+    .influence-badge { background:#ede9fe; color:#5b21b6; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; }
   </style>
 </head>
 <body>
@@ -57,32 +63,82 @@
       <p id="uploadMsg" class="mt-2" style="font-size:13px"></p>
     </div>
 
-    <!-- Stats -->
+    <!-- Summary Stats -->
     <div id="statsSection" style="display:none">
-      <div class="stats-grid">
+      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
         <div class="stat-card"><div class="stat-label">Total Messages</div><div class="stat-value" id="statMessages">—</div></div>
         <div class="stat-card"><div class="stat-label">Active Users</div><div class="stat-value" id="statUsers">—</div></div>
         <div class="stat-card"><div class="stat-label">Peak Hour</div><div class="stat-value" id="statPeak">—</div></div>
         <div class="stat-card">
           <div class="stat-label">Sentiment</div>
-          <div class="stat-value" id="statSentiment" style="font-size:18px">—</div>
-          <div class="sentiment-bar mt-2"><div class="sentiment-fill" id="sentimentFill" style="width:50%"></div></div>
+          <div class="stat-value" id="statSentiment" style="font-size:16px">—</div>
+          <div class="sentiment-bar"><div class="sentiment-fill" id="sentimentFill" style="width:50%"></div></div>
         </div>
       </div>
 
-      <!-- Charts -->
-      <div class="chart-grid">
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card"><div class="stat-label">Text Messages</div><div class="stat-value" id="statText">—</div></div>
+        <div class="stat-card"><div class="stat-label">Media Messages</div><div class="stat-value" id="statMedia">—</div></div>
+        <div class="stat-card"><div class="stat-label" style="color:#f59e0b">Spam Detected</div><div class="stat-value" style="color:#f59e0b" id="statSpam">—</div></div>
+      </div>
+
+      <!-- Charts row 1 -->
+      <div class="chart-grid-2">
         <div class="card"><h2 class="card-title">Text vs Media</h2><canvas id="pieChart" style="max-height:220px"></canvas></div>
         <div class="card"><h2 class="card-title">Messages by Hour</h2><canvas id="hourChart" style="max-height:220px"></canvas></div>
       </div>
 
-      <!-- Top Users -->
+      <!-- Daily trend -->
       <div class="card">
-        <h2 class="card-title">Top 10 Most Active Users</h2>
+        <h2 class="card-title">Daily Message Trend</h2>
+        <canvas id="dailyChart" style="max-height:200px"></canvas>
+      </div>
+
+      <!-- Top users + Influential members -->
+      <div class="chart-grid-2">
+        <div class="card">
+          <h2 class="card-title">Top 10 Most Active Users</h2>
+          <table class="users-table">
+            <thead><tr><th>#</th><th>User</th><th>Messages</th></tr></thead>
+            <tbody id="topUsersBody"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h2 class="card-title">Influential Members</h2>
+          <p class="text-muted mb-2" style="font-size:11px">Ranked by replies received within 5-minute window</p>
+          <table class="users-table">
+            <thead><tr><th>Rank</th><th>Member</th><th>Influence Score</th></tr></thead>
+            <tbody id="influentialBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Interaction clusters -->
+      <div class="card">
+        <h2 class="card-title">Interaction Density — Top 10 User Pairs</h2>
+        <p class="text-muted mb-3" style="font-size:12px">Most frequent reply exchanges between members</p>
         <table class="users-table">
-          <thead><tr><th>Rank</th><th>Name</th><th>Messages</th></tr></thead>
-          <tbody id="topUsersBody"></tbody>
+          <thead><tr><th>#</th><th>User A → User B</th><th>Reply Count</th></tr></thead>
+          <tbody id="interactionBody"></tbody>
         </table>
+      </div>
+
+      <!-- Emotional highlights -->
+      <div class="chart-grid-2">
+        <div class="card">
+          <h2 class="card-title" style="color:#16a34a">Top 5 Most Positive Messages</h2>
+          <div id="positiveMessages"></div>
+        </div>
+        <div class="card">
+          <h2 class="card-title" style="color:#dc2626">Top 5 Most Negative Messages</h2>
+          <div id="negativeMessages"></div>
+        </div>
+      </div>
+
+      <!-- Spam messages -->
+      <div class="card" id="spamCard" style="display:none">
+        <h2 class="card-title" style="color:#f59e0b">Flagged Spam Messages</h2>
+        <div id="spamList"></div>
       </div>
     </div>
 
@@ -90,8 +146,8 @@
     <div class="card">
       <h2 class="card-title">Upload History</h2>
       <table class="users-table">
-        <thead><tr><th>Date</th><th>Messages</th><th>Active Users</th><th>Peak Hour</th><th>Sentiment</th><th>Text</th><th>Media</th><th>Uploaded By</th><th class="admin-only"></th></tr></thead>
-        <tbody id="historyBody"><tr><td colspan="9" class="text-center text-muted py-4">Loading…</td></tr></tbody>
+        <thead><tr><th>Date</th><th>Messages</th><th>Active Users</th><th>Peak Hour</th><th>Sentiment</th><th>Spam</th><th>Text</th><th>Media</th><th>Uploaded By</th><th class="admin-only"></th></tr></thead>
+        <tbody id="historyBody"><tr><td colspan="10" class="text-center text-muted py-4">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -101,12 +157,12 @@
   <script src="/frontend/js/api.js"></script>
   <script src="/frontend/js/main.js"></script>
   <script>
-    let pieChart = null, hourChart = null;
+    let pieChart = null, hourChart = null, dailyChart = null;
 
     const dropZone = document.getElementById('dropZone');
     dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('over'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
-    dropZone.addEventListener('drop',      e => { e.preventDefault(); dropZone.classList.remove('over'); if(e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]); });
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('over'); if(e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]); });
     function fileChosen(i) { if(i.files[0]) uploadFile(i.files[0]); }
 
     async function uploadFile(file) {
@@ -127,40 +183,37 @@
 
       if (res.success) {
         msg.className = 'mt-2 text-success';
-        msg.innerText = `✓ Parsed ${res.data.stats.total_messages} messages from ${res.data.stats.active_users} users`;
-        loadLatest();
-        loadHistory();
+        msg.innerText = `✓ Parsed ${res.data.stats.total_messages} messages · ${res.data.stats.spam_count} spam detected`;
+        loadLatest(); loadHistory();
       } else {
         msg.className = 'mt-2 text-danger';
         msg.innerText = res.error || 'Upload failed';
       }
     }
 
-    function sentimentLabel(s) {
-      if (s >= 0.05)  return `Positive (${s})`;
-      if (s <= -0.05) return `Negative (${s})`;
-      return `Neutral (${s})`;
-    }
-    function sentimentColor(s) {
-      return s >= 0.05 ? '#16a34a' : s <= -0.05 ? '#dc2626' : '#f59e0b';
-    }
+    function sentimentLabel(s) { return s >= 0.05 ? `Positive (${s})` : s <= -0.05 ? `Negative (${s})` : `Neutral (${s})`; }
+    function sentimentColor(s) { return s >= 0.05 ? '#16a34a' : s <= -0.05 ? '#dc2626' : '#f59e0b'; }
 
     async function loadLatest() {
       const res = await fetch('/api/v1/analytics/latest', {
-        headers: {'Authorization':`Bearer ${localStorage.getItem('token')}`}
+        headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}
       }).then(r=>r.json());
-
       if (!res.success) return;
+
       const a = res.data.analytics;
       document.getElementById('statsSection').style.display = 'block';
 
+      // Summary cards
       document.getElementById('statMessages').innerText = a.total_messages;
       document.getElementById('statUsers').innerText    = a.active_users;
       document.getElementById('statPeak').innerText     = `${a.peak_hour}:00`;
+      document.getElementById('statText').innerText     = a.text_count;
+      document.getElementById('statMedia').innerText    = a.media_count;
+      document.getElementById('statSpam').innerText     = a.spam_count || 0;
 
       const score = parseFloat(a.sentiment_score);
-      document.getElementById('statSentiment').innerText    = sentimentLabel(score.toFixed(2));
-      document.getElementById('statSentiment').style.color  = sentimentColor(score);
+      document.getElementById('statSentiment').innerText   = sentimentLabel(score.toFixed(2));
+      document.getElementById('statSentiment').style.color = sentimentColor(score);
       const pct = Math.round((score + 1) / 2 * 100);
       document.getElementById('sentimentFill').style.width      = `${pct}%`;
       document.getElementById('sentimentFill').style.background = sentimentColor(score);
@@ -169,60 +222,99 @@
       if (pieChart) pieChart.destroy();
       pieChart = new Chart(document.getElementById('pieChart'), {
         type: 'doughnut',
-        data: {
-          labels: ['Text Messages', 'Media Messages'],
-          datasets: [{ data: [a.text_count, a.media_count], backgroundColor: ['#4f46e5','#10b981'], borderWidth: 0 }]
-        },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        data: { labels:['Text','Media'], datasets:[{ data:[a.text_count, a.media_count], backgroundColor:['#4f46e5','#10b981'], borderWidth:0 }] },
+        options: { responsive:true, plugins:{ legend:{ position:'bottom' } } }
       });
 
       // Hourly bar chart
       const hourly = a.hourly_data || {};
-      const hours  = Array.from({length:24}, (_,i) => i);
       if (hourChart) hourChart.destroy();
       hourChart = new Chart(document.getElementById('hourChart'), {
-        type: 'bar',
-        data: {
-          labels: hours.map(h => `${h}:00`),
-          datasets: [{ label:'Messages', data: hours.map(h => hourly[h] || 0), backgroundColor:'#4f46e5', borderRadius:4 }]
-        },
-        options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}} }
+        type:'bar',
+        data:{ labels: Array.from({length:24},(_,i)=>`${i}:00`), datasets:[{ label:'Messages', data:Array.from({length:24},(_,i)=>hourly[i]||0), backgroundColor:'#4f46e5', borderRadius:4 }] },
+        options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
       });
+
+      // Daily trend line chart
+      const daily = a.daily_data || [];
+      if (dailyChart) dailyChart.destroy();
+      if (daily.length) {
+        dailyChart = new Chart(document.getElementById('dailyChart'), {
+          type:'line',
+          data:{ labels:daily.map(d=>d.date), datasets:[{ label:'Messages per day', data:daily.map(d=>d.count), borderColor:'#4f46e5', backgroundColor:'rgba(79,70,229,0.1)', tension:0.3, fill:true, pointRadius:3 }] },
+          options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
+        });
+      }
 
       // Top users
       const top = a.top_senders || [];
       document.getElementById('topUsersBody').innerHTML = top.length
-        ? top.map((u,i) => `<tr><td>${i+1}</td><td>${u.name}</td><td>${u.count}</td></tr>`).join('')
+        ? top.map((u,i)=>`<tr><td>${i+1}</td><td>${u.name}</td><td>${u.count}</td></tr>`).join('')
         : '<tr><td colspan="3" class="text-muted text-center py-3">No data</td></tr>';
+
+      // Influential members
+      const influential = a.influential_members || [];
+      document.getElementById('influentialBody').innerHTML = influential.length
+        ? influential.map(m=>`<tr><td><span class="influence-badge">#${m.rank}</span></td><td>${m.sender}</td><td>${m.influence_score}</td></tr>`).join('')
+        : '<tr><td colspan="3" class="text-muted text-center py-3">No data</td></tr>';
+
+      // Interaction clusters
+      const clusters = a.interaction_clusters || [];
+      document.getElementById('interactionBody').innerHTML = clusters.length
+        ? clusters.map((c,i)=>`<tr><td>${i+1}</td><td>${c.pair}</td><td><strong>${c.count}</strong></td></tr>`).join('')
+        : '<tr><td colspan="3" class="text-muted text-center py-3">No data</td></tr>';
+
+      // Emotional highlights
+      const eh = a.emotional_highlights || {};
+      const renderHighlight = (items, cls) => items && items.length
+        ? items.map(m=>`<div class="highlight-card ${cls}"><strong>${m.sender}</strong> <span class="text-muted">(${m.score > 0 ? '+' : ''}${m.score})</span><p class="mb-0 mt-1">${m.body}</p></div>`).join('')
+        : '<p class="text-muted" style="font-size:13px">No data</p>';
+
+      document.getElementById('positiveMessages').innerHTML = renderHighlight(eh.most_positive, 'highlight-positive');
+      document.getElementById('negativeMessages').innerHTML = renderHighlight(eh.most_negative, 'highlight-negative');
+
+      // Spam
+      const spam = a.spam_messages || [];
+      if (spam.length > 0) {
+        document.getElementById('spamCard').style.display = 'block';
+        document.getElementById('spamList').innerHTML = spam.map(s=>
+          `<div class="spam-item"><strong>${s.sender}</strong> <span class="badge bg-warning text-dark ms-1">${s.reason}</span><p class="mb-0 mt-1">${s.body}</p></div>`
+        ).join('');
+      } else {
+        document.getElementById('spamCard').style.display = 'none';
+      }
     }
 
     async function loadHistory() {
       const res = await fetch('/api/v1/analytics/history', {
-        headers: {'Authorization':`Bearer ${localStorage.getItem('token')}`}
+        headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}
       }).then(r=>r.json());
 
       const tbody = document.getElementById('historyBody');
+      const isAdmin = getRole() === 'admin';
+
       if (!res.success || !res.data.analytics.length) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No analytics uploaded yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">No analytics uploaded yet</td></tr>';
         return;
       }
-      const isAdmin = getRole() === 'admin';
-      tbody.innerHTML = res.data.analytics.map(a => `
+      tbody.innerHTML = res.data.analytics.map(a=>`
         <tr>
           <td>${new Date(a.upload_date).toLocaleDateString()}</td>
           <td>${a.total_messages}</td><td>${a.active_users}</td>
           <td>${a.peak_hour}:00</td>
           <td style="color:${sentimentColor(parseFloat(a.sentiment_score))};font-weight:600">${parseFloat(a.sentiment_score).toFixed(2)}</td>
+          <td>${a.spam_count||0}</td>
           <td>${a.text_count}</td><td>${a.media_count}</td>
           <td>${a.uploaded_by_name||'—'}</td>
-          <td>${isAdmin ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteAnalytics('${a.id}')">Delete</button>` : ''}</td>
+          <td>${isAdmin?`<button class="btn btn-sm btn-outline-danger" onclick="deleteAnalytics('${a.id}')">Delete</button>`:''}
+          </td>
         </tr>`).join('');
     }
 
     async function deleteAnalytics(id) {
       if (!confirm('Delete this analytics record?')) return;
       const res = await fetch(`/api/v1/analytics/${id}`, {
-        method: 'DELETE', headers: {'Authorization':`Bearer ${localStorage.getItem('token')}`}
+        method:'DELETE', headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}
       }).then(r=>r.json());
       if (res.success) { loadHistory(); loadLatest(); }
       else alert(res.error);
