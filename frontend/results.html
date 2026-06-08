@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IDMS | Results</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f8;
+      min-height: 100vh;
+      color: #1a1a2e;
+    }
+    nav {
+      background: #fff;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .nav-logo { font-size: 22px; font-weight: 700; color: #5b4fcf; }
+    .nav-links { display: flex; gap: 24px; align-items: center; }
+    .nav-links a { text-decoration: none; color: #555; font-size: 14px; }
+    .btn-logout {
+      background: #f0f2f8; border: none; padding: 8px 16px;
+      border-radius: 8px; cursor: pointer; color: #555; font-size: 14px;
+    }
+    .container { max-width: 800px; margin: 40px auto; padding: 0 24px; }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: #5b4fcf; text-decoration: none; font-size: 14px;
+      margin-bottom: 24px; font-weight: 600;
+    }
+    .card {
+      background: #fff; border-radius: 20px; padding: 36px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 20px;
+    }
+    .ballot-status {
+      display: inline-block; padding: 4px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; margin-bottom: 16px;
+    }
+    .status-closed { background: #fce4ec; color: #c62828; }
+    .status-published { background: #e8f5e9; color: #2e7d32; }
+    .ballot-title { font-size: 26px; font-weight: 700; margin-bottom: 20px; }
+    .stats-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; margin-bottom: 28px;
+    }
+    .stat-box {
+      background: #f8f7ff; border-radius: 12px; padding: 20px;
+      text-align: center;
+    }
+    .stat-number { font-size: 32px; font-weight: 800; color: #5b4fcf; }
+    .stat-label { font-size: 13px; color: #888; margin-top: 4px; }
+    .divider { border: none; border-top: 1.5px solid #f0f2f8; margin: 24px 0; }
+    .section-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+    .result-row { margin-bottom: 20px; }
+    .result-header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 8px;
+    }
+    .result-option { font-size: 15px; font-weight: 600; }
+    .result-pct { font-size: 15px; font-weight: 700; color: #5b4fcf; }
+    .progress-bar {
+      height: 12px; background: #f0f2f8; border-radius: 20px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background: linear-gradient(90deg, #5b4fcf, #8b7ee8);
+      border-radius: 20px; transition: width 0.8s ease;
+    }
+    .result-votes { font-size: 12px; color: #aaa; margin-top: 4px; }
+    .winner-badge {
+      background: #fff8e1; color: #f57f17; font-size: 12px;
+      font-weight: 700; padding: 3px 10px; border-radius: 20px;
+      margin-left: 8px;
+    }
+    .chart-container { margin-top: 24px; }
+    .export-actions { display: flex; gap: 12px; margin-top: 20px; }
+    .btn-export {
+      flex: 1; padding: 12px; border-radius: 10px; border: none;
+      cursor: pointer; font-size: 14px; font-weight: 600;
+    }
+    .btn-csv { background: #e8f5e9; color: #2e7d32; }
+    .btn-pdf { background: #fce4ec; color: #c62828; }
+    .btn-csv:hover { background: #c8e6c9; }
+    .btn-pdf:hover { background: #f8bbd0; }
+    .loading { text-align: center; padding: 60px; color: #aaa; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">IDMS</div>
+  <div class="nav-links">
+    <a href="/frontend/dashboard.html">Dashboard</a>
+    <a href="/frontend/ballots.html">Ballots</a>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="container">
+  <a href="/frontend/ballots.html" class="back-link">← Back to Ballots</a>
+  <div id="resultsContainer">
+    <div class="loading">Loading results...</div>
+  </div>
+</div>
+
+<script>
+  const API = 'https://idms-backend-deu6.onrender.com/api/v1';
+  const token = localStorage.getItem('token');
+  if (!token) window.location.href = '/frontend/login.html';
+
+  const params = new URLSearchParams(window.location.search);
+  const ballotId = params.get('id');
+  if (!ballotId) window.location.href = '/frontend/ballots.html';
+
+  let resultsData = null;
+
+  function exportCSV() {
+    if (!resultsData) return;
+    const rows = [['Option', 'Votes', 'Percentage']];
+    resultsData.results.forEach(r => rows.push([r.option_text, r.vote_count, r.percentage + '%']));
+    rows.push(['', '', '']);
+    rows.push(['Total Votes', resultsData.total_votes, '']);
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${resultsData.ballot_title}_results.csv`;
+    a.click();
+  }
+
+  function exportPDF() {
+    window.print();
+  }
+
+  async function loadResults() {
+    const res = await fetch(`${API}/ballots/${ballotId}/results`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (data.status !== 'success') {
+      document.getElementById('resultsContainer').innerHTML =
+        `<div class="card"><div class="loading">${data.message || 'Results not available yet.'}</div></div>`;
+      return;
+    }
+
+    resultsData = data.data;
+    const results = resultsData.results;
+    const maxVotes = Math.max(...results.map(r => r.vote_count));
+    const winner = results.find(r => r.vote_count === maxVotes);
+
+    document.getElementById('resultsContainer').innerHTML = `
+      <div class="card">
+        <span class="ballot-status status-${resultsData.status}">${resultsData.status.toUpperCase()}</span>
+        <div class="ballot-title">${resultsData.ballot_title}</div>
+
+        <div class="stats-row">
+          <div class="stat-box">
+            <div class="stat-number">${resultsData.total_votes}</div>
+            <div class="stat-label">Total Votes Cast</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${results.length}</div>
+            <div class="stat-label">Options Available</div>
+          </div>
+        </div>
+
+        <hr class="divider" />
+        <div class="section-title">Results Breakdown</div>
+
+        ${results.map(r => `
+          <div class="result-row">
+            <div class="result-header">
+              <span class="result-option">
+                ${r.option_text}
+                ${r.vote_count === maxVotes && maxVotes > 0 ? '<span class="winner-badge">🏆 Leading</span>' : ''}
+              </span>
+              <span class="result-pct">${r.percentage}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${r.percentage}%"></div>
+            </div>
+            <div class="result-votes">${r.vote_count} vote${r.vote_count !== 1 ? 's' : ''}</div>
+          </div>
+        `).join('')}
+
+        <hr class="divider" />
+        <div class="section-title">Visual Chart</div>
+        <div class="chart-container">
+          <canvas id="resultsChart" height="200"></canvas>
+        </div>
+
+        <div class="export-actions">
+          <button class="btn-export btn-csv" onclick="exportCSV()">📊 Export CSV</button>
+          <button class="btn-export btn-pdf" onclick="exportPDF()">📄 Export PDF</button>
+        </div>
+      </div>
+    `;
+
+    // Render Chart
+    const ctx = document.getElementById('resultsChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: results.map(r => r.option_text),
+        datasets: [{
+          label: 'Votes',
+          data: results.map(r => r.vote_count),
+          backgroundColor: results.map((_, i) =>
+            i === results.indexOf(winner) ? '#5b4fcf' : '#c5bef4'
+          ),
+          borderRadius: 8,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.raw} votes (${results[ctx.dataIndex].percentage}%)`
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 },
+            grid: { color: '#f0f2f8' }
+          },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  function logout() {
+    localStorage.clear();
+    window.location.href = '/frontend/login.html';
+  }
+
+  loadResults();
+</script>
+</body>
+</html>

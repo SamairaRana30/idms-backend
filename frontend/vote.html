@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IDMS | Cast Vote</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f8;
+      min-height: 100vh;
+      color: #1a1a2e;
+    }
+    nav {
+      background: #fff;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .nav-logo { font-size: 22px; font-weight: 700; color: #5b4fcf; }
+    .nav-links { display: flex; gap: 24px; align-items: center; }
+    .nav-links a { text-decoration: none; color: #555; font-size: 14px; }
+    .btn-logout {
+      background: #f0f2f8; border: none; padding: 8px 16px;
+      border-radius: 8px; cursor: pointer; color: #555; font-size: 14px;
+    }
+    .container { max-width: 680px; margin: 40px auto; padding: 0 24px; }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: #5b4fcf; text-decoration: none; font-size: 14px;
+      margin-bottom: 24px; font-weight: 600;
+    }
+    .card {
+      background: #fff; border-radius: 20px; padding: 36px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .ballot-status {
+      display: inline-block; padding: 4px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; margin-bottom: 16px;
+    }
+    .status-published { background: #e8f5e9; color: #2e7d32; }
+    .ballot-title { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+    .ballot-desc { color: #888; font-size: 14px; line-height: 1.6; margin-bottom: 8px; }
+    .ballot-meta { font-size: 13px; color: #aaa; margin-bottom: 28px; }
+    .divider { border: none; border-top: 1.5px solid #f0f2f8; margin: 24px 0; }
+    .options-label { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: #1a1a2e; }
+    .option-item {
+      border: 2px solid #e8e8f0; border-radius: 12px; padding: 16px 20px;
+      margin-bottom: 12px; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .option-item:hover { border-color: #5b4fcf; background: #faf9ff; }
+    .option-item.selected {
+      border-color: #5b4fcf; background: #f3f1ff;
+    }
+    .option-radio {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid #ccc; flex-shrink: 0; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .option-item.selected .option-radio {
+      border-color: #5b4fcf; background: #5b4fcf;
+    }
+    .option-item.selected .option-radio::after {
+      content: ''; width: 8px; height: 8px;
+      border-radius: 50%; background: #fff;
+    }
+    .option-text { font-size: 15px; font-weight: 500; }
+    .vote-actions { margin-top: 28px; }
+    .btn-vote {
+      width: 100%; background: #5b4fcf; color: #fff; border: none;
+      padding: 16px; border-radius: 12px; cursor: pointer;
+      font-size: 16px; font-weight: 700; transition: background 0.2s;
+    }
+    .btn-vote:hover { background: #4a3fbf; }
+    .btn-vote:disabled { background: #ccc; cursor: not-allowed; }
+    #message {
+      padding: 14px 18px; border-radius: 10px; margin-top: 16px;
+      font-size: 14px; display: none; text-align: center;
+    }
+    .msg-success { background: #e8f5e9; color: #2e7d32; }
+    .msg-error { background: #fce4ec; color: #c62828; }
+    .msg-info { background: #e3f2fd; color: #1565c0; }
+    .loading { text-align: center; padding: 60px; color: #aaa; }
+    .confirm-overlay {
+      display: none; position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%; background: rgba(0,0,0,0.4);
+      z-index: 100; align-items: center; justify-content: center;
+    }
+    .confirm-overlay.active { display: flex; }
+    .confirm-box {
+      background: #fff; border-radius: 20px; padding: 36px;
+      max-width: 400px; width: 90%; text-align: center;
+    }
+    .confirm-box h3 { font-size: 20px; margin-bottom: 12px; }
+    .confirm-box p { color: #666; font-size: 14px; margin-bottom: 24px; }
+    .confirm-actions { display: flex; gap: 12px; }
+    .btn-confirm {
+      flex: 1; background: #5b4fcf; color: #fff; border: none;
+      padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 600;
+    }
+    .btn-cancel-confirm {
+      flex: 1; background: #f0f2f8; border: none;
+      padding: 12px; border-radius: 10px; cursor: pointer; color: #555;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">IDMS</div>
+  <div class="nav-links">
+    <a href="/frontend/dashboard.html">Dashboard</a>
+    <a href="/frontend/ballots.html">Ballots</a>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="container">
+  <a href="/frontend/ballots.html" class="back-link">← Back to Ballots</a>
+  <div id="voteContainer">
+    <div class="loading">Loading ballot...</div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <h3>Confirm Your Vote</h3>
+    <p id="confirmText">Are you sure you want to vote for this option? This action cannot be undone.</p>
+    <div class="confirm-actions">
+      <button class="btn-cancel-confirm" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-confirm" onclick="submitVote()">Confirm Vote</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'https://idms-backend-deu6.onrender.com/api/v1';
+  const token = localStorage.getItem('token');
+  if (!token) window.location.href = '/frontend/login.html';
+
+  const params = new URLSearchParams(window.location.search);
+  const ballotId = params.get('id');
+  if (!ballotId) window.location.href = '/frontend/ballots.html';
+
+  let selectedOptionId = null;
+  let ballot = null;
+
+  function showMessage(msg, type) {
+    const el = document.getElementById('message');
+    el.textContent = msg;
+    el.className = `msg-${type}`;
+    el.style.display = 'block';
+  }
+
+  function selectOption(optionId, optionText) {
+    selectedOptionId = optionId;
+    document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
+    document.getElementById(`opt-${optionId}`).classList.add('selected');
+    document.getElementById('btnVote').disabled = false;
+    document.getElementById('confirmText').textContent =
+      `Are you sure you want to vote for "${optionText}"? This action cannot be undone.`;
+  }
+
+  function openConfirm() {
+    if (!selectedOptionId) return;
+    document.getElementById('confirmOverlay').classList.add('active');
+  }
+
+  function closeConfirm() {
+    document.getElementById('confirmOverlay').classList.remove('active');
+  }
+
+  async function submitVote() {
+    closeConfirm();
+    const res = await fetch(`${API}/votes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ ballot_id: parseInt(ballotId), option_id: selectedOptionId })
+    });
+    const data = await res.json();
+    if (data.status === 'success') {
+      showMessage('✅ Your vote has been cast successfully!', 'success');
+      document.getElementById('btnVote').disabled = true;
+      document.querySelectorAll('.option-item').forEach(el => el.style.pointerEvents = 'none');
+      setTimeout(() => window.location.href = `results.html?id=${ballotId}`, 2000);
+    } else {
+      showMessage(data.message, 'error');
+    }
+  }
+
+  async function loadBallot() {
+    const res = await fetch(`${API}/ballots/${ballotId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.status !== 'success') {
+      document.getElementById('voteContainer').innerHTML =
+        '<div class="loading">Ballot not found.</div>';
+      return;
+    }
+
+    ballot = data.data;
+    const options = ballot.options || [];
+
+    document.getElementById('voteContainer').innerHTML = `
+      <div class="card">
+        <span class="ballot-status status-${ballot.status}">${ballot.status.toUpperCase()}</span>
+        <div class="ballot-title">${ballot.title}</div>
+        <div class="ballot-desc">${ballot.description || ''}</div>
+        <div class="ballot-meta">
+          ${ballot.start_date ? '📅 ' + new Date(ballot.start_date).toLocaleDateString() : ''}
+          ${ballot.end_date ? ' → ' + new Date(ballot.end_date).toLocaleDateString() : ''}
+        </div>
+        <hr class="divider" />
+        <div class="options-label">Select your option:</div>
+        ${options.map(opt => `
+          <div class="option-item" id="opt-${opt.id}" onclick="selectOption(${opt.id}, '${opt.option_text}')">
+            <div class="option-radio"></div>
+            <div class="option-text">${opt.option_text}</div>
+          </div>
+        `).join('')}
+        <div class="vote-actions">
+          <button class="btn-vote" id="btnVote" disabled onclick="openConfirm()">
+            Cast My Vote
+          </button>
+          <div id="message"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  function logout() {
+    localStorage.clear();
+    window.location.href = '/frontend/login.html';
+  }
+
+  loadBallot();
+</script>
+</body>
+</html>
