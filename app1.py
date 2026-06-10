@@ -1,0 +1,288 @@
+import os
+import bcrypt
+import jwt
+from datetime import datetime, timedelta
+from functools import wraps
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
+
+# simran imports
+from file_validator import (
+    validate_file_type,
+    validate_file_size,
+    validate_file_not_empty
+)
+from file_parser import parse_file
+from database import get_db_connection
+
+print("APP STARTED SUCCESSFULLY")
+
+load_dotenv()
+
+app = Flask(__name__)
+CORS(app)
+
+UPLOAD_FOLDER = "uploads"
+CLEANED_FOLDER = "cleaned_uploads"
+
+os.makedirs(CLEANED_FOLDER, exist_ok=True)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+app.config['JWT_SECRET'] = os.getenv('JWT_SECRET', 'my_super_secret_key_12345')
+
+
+# ---------------- JWT Middleware ----------------
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization')
+
+        if not token:
+            return jsonify({'error': 'Token missing'}), 401
+
+        try:
+            token = token.split(' ')[1]
+            data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=['HS256'])
+            request.user = data
+        except Exception as e:
+            return jsonify({'error': f'Invalid token: {str(e)}'}), 401
+
+        return f(*args, **kwargs)
+
+    return decorated
+
+
+# ---------------- Health / Base Routes ----------------
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        'message': 'IDMS API is running!',
+        'status': 'online',
+        'version': '1.0.0',
+        'endpoints': {
+            'health': '/api/v1/health',
+            'login': '/api/v1/auth/login (POST)',
+            'register': '/api/v1/auth/register (POST)',
+            'users': '/api/v1/users (GET)',
+            'init': '/api/v1/init (POST)'
+        }
+    })
+
+
+@app.route('/api/v1/health', methods=['GET'])
+def health_check():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.close()
+        conn.close()
+        db_status = 'connected'
+    except Exception as e:
+        db_status = f'disconnected: {str(e)}'
+
+    return jsonify({
+        'status': 'healthy',
+        'database': db_status,
+        'timestamp': datetime.now().isoformat()
+    })
+
+
+# ---------------- Init Test Data ----------------
+@app.route('/api/v1/init', methods=['POST'])
+def init_test_data():
+    """Create test admin user (password: Test@123)"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        password = 'Test@123'
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+
+        cur.execute("SELECT id FROM users WHERE email = %s", ('admin@test.com',))
+        existing_user = cur.fetchone()
+
+        if not existing_user:
+            cur.execute(
+                "INSERT INTO users (email, password_hash, role) VALUES (%s, %s, %s)",
+                ('admin@test.com', hashed_password.decode('utf-8'), 'admin')
+            )
+            conn.commit()
+            message = 'Test admin user created successfully.'
+        else:
+            message = 'Test admin user already exists.'
+
+        cur.close()
+        conn.close()
+
+        return jsonify({'success': True, 'message': message})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ---------------- Auth ----------------
+@app.route('/api/v1/auth/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        cur.execute("SELECT * FROM users WHERE email = %s", (email,))
+        user = cur.fetchone()
+
+        cur.close()
+        conn.close()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 401
+
+        if bcrypt.checkpw(
+            password.encode('utf-8'),
+            user['password_hash'].encode('utf-8')
+        ):
+            token = jwt.encode({
+                'user_id': user['id'],
+                'email': user['email'],
+                'role': user['role'],
+                'exp': datetime.utcnow() + timedelta(hours=24)
+            }, app.config['JWT_SECRET'], algorithm='HS256')
+
+            return jsonify({
+                'success': True,
+                'token': token,
+                'user': {
+                    'id': user['id'],
+                    'email': user['email'],
+                    'role': user['role']
+                }
+            })
+
+        return jsonify({'error': 'Invalid password'}), 401
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/v1/auth/register', methods=['POST'])
+def register():
+    """Register a new user"""
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({'error': 'Email and password required'}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+        cur.execute(
+            "INSERT INTO users (email, password_hash, role) VALUES (%s, %s, %s) RETURNING id",
+            (email, hashed.decode('utf-8'), 'user')
+        )
+
+        user_id = cur.fetchone()[0]
+        conn.commit()
+
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'message': 'User created',
+            'user_id': user_id
+        }), 201
+
+    except psycopg2.IntegrityError:
+        return jsonify({'error': 'Email already exists'}), 409
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ---------------- Users ----------------
+@app.route('/api/v1/users', methods=['GET'])
+@token_required
+def get_users():
+    """Get all users (protected endpoint)"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        cur.execute("SELECT id, email, role, is_active, created_at FROM users")
+        users = cur.fetchall()
+
+        cur.close()
+        conn.close()
+
+        return jsonify({'success': True, 'users': users})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ---------------- File Upload ----------------
+@app.route('/api/v1/admin/migration/upload', methods=['GET', 'POST'])
+def upload_file():
+    print("UPLOAD ENDPOINT HIT", request.method)
+
+    if request.method == 'GET':
+        return jsonify({"message": "Upload route working"})
+
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file uploaded'}), 400
+
+        file = request.files['file']
+
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        # Validate
+        validate_file_type(file.filename)
+
+        file_bytes = file.read()
+
+        validate_file_not_empty(len(file_bytes))
+        validate_file_size(len(file_bytes))
+
+        # Save file
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        safe_filename = f"{timestamp}_{file.filename}"
+        save_path = os.path.join(UPLOAD_FOLDER, safe_filename)
+
+        with open(save_path, 'wb') as f:
+            f.write(file_bytes)
+
+        # Parse file
+        result = parse_file(save_path)
+
+        return jsonify({
+            'success': True,
+            'message': 'File uploaded successfully',
+            'preview': result["preview"],
+            'summary': result["summary"]
+        })
+
+    except Exception as e:
+        print("UPLOAD ERROR:", str(e))
+        return jsonify({'error': str(e)}), 400
+
+
+# ---------------- Main ----------------
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', debug=False, port=port)

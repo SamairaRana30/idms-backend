@@ -1,0 +1,61 @@
+body{
+    font-family: Arial;
+    background:#f4f4f4;
+}
+
+.container{
+    width:70%;
+    margin:auto;
+    margin-top:50px;
+    text-align:center;
+}
+
+.upload-box{
+    border:2px dashed #666;
+    padding:40px;
+    background:white;
+    cursor:pointer;
+}
+
+button{
+    padding:12px 20px;
+    border:none;
+    cursor:pointer;
+}
+
+.upload-btn{
+    background:green;
+    color:white;
+    margin-top:20px;
+}
+
+.loader{
+    width:40px;
+    height:40px;
+    border:5px solid #ccc;
+    border-top:5px solid green;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    margin:20px auto;
+}
+
+.hidden{
+    display:none;
+}
+
+@keyframes spin{
+    100%{
+        transform:rotate(360deg);
+    }
+}
+
+table{
+    width:100%;
+    margin-top:20px;
+    border-collapse:collapse;
+}
+
+th, td{
+    border:1px solid #ccc;
+    padding:10px;
+}

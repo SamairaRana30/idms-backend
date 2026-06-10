@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IDMS | Ballots</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f8;
+      min-height: 100vh;
+      color: #1a1a2e;
+    }
+    nav {
+      background: #fff;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .nav-logo { font-size: 22px; font-weight: 700; color: #5b4fcf; }
+    .nav-links { display: flex; gap: 24px; align-items: center; }
+    .nav-links a { text-decoration: none; color: #555; font-size: 14px; }
+    .btn-logout {
+      background: #f0f2f8; border: none; padding: 8px 16px;
+      border-radius: 8px; cursor: pointer; color: #555; font-size: 14px;
+    }
+    .container { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
+    .page-header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 32px;
+    }
+    .page-header h1 { font-size: 28px; font-weight: 700; color: #1a1a2e; }
+    .page-header p { color: #888; margin-top: 4px; font-size: 14px; }
+    .btn-primary {
+      background: #5b4fcf; color: #fff; border: none;
+      padding: 12px 24px; border-radius: 10px; cursor: pointer;
+      font-size: 14px; font-weight: 600; text-decoration: none;
+      display: inline-block;
+    }
+    .btn-primary:hover { background: #4a3fbf; }
+    .admin-form {
+      background: #fff; border-radius: 16px; padding: 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07); margin-bottom: 32px;
+      display: none;
+    }
+    .admin-form h2 { font-size: 18px; margin-bottom: 20px; color: #1a1a2e; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 10px 14px; border: 1.5px solid #e0e0e0;
+      border-radius: 8px; font-size: 14px; outline: none;
+      transition: border 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: #5b4fcf;
+    }
+    .options-container { margin-bottom: 16px; }
+    .option-row {
+      display: flex; gap: 8px; margin-bottom: 8px; align-items: center;
+    }
+    .option-row input { flex: 1; }
+    .btn-remove-option {
+      background: #fee; border: 1px solid #fcc; color: #c33;
+      border-radius: 6px; padding: 8px 12px; cursor: pointer; font-size: 13px;
+    }
+    .btn-add-option {
+      background: #f0f2f8; border: 1.5px dashed #5b4fcf; color: #5b4fcf;
+      padding: 8px 16px; border-radius: 8px; cursor: pointer;
+      font-size: 13px; font-weight: 600; width: 100%;
+    }
+    .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 8px; }
+    .btn-cancel {
+      background: #f0f2f8; border: none; padding: 10px 20px;
+      border-radius: 8px; cursor: pointer; font-size: 14px; color: #555;
+    }
+    .ballots-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+    .ballot-card {
+      background: #fff; border-radius: 16px; padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07); transition: transform 0.2s;
+    }
+    .ballot-card:hover { transform: translateY(-3px); }
+    .ballot-status {
+      display: inline-block; padding: 4px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; margin-bottom: 12px;
+    }
+    .status-published { background: #e8f5e9; color: #2e7d32; }
+    .status-draft { background: #fff8e1; color: #f57f17; }
+    .status-closed { background: #fce4ec; color: #c62828; }
+    .ballot-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .ballot-desc { font-size: 13px; color: #888; margin-bottom: 16px; line-height: 1.5; }
+    .ballot-meta { font-size: 12px; color: #aaa; margin-bottom: 16px; }
+    .ballot-actions { display: flex; gap: 8px; }
+    .btn-vote {
+      flex: 1; background: #5b4fcf; color: #fff; border: none;
+      padding: 10px; border-radius: 8px; cursor: pointer; font-size: 14px;
+      font-weight: 600;
+    }
+    .btn-vote:hover { background: #4a3fbf; }
+    .btn-results {
+      background: #f0f2f8; border: none; padding: 10px 16px;
+      border-radius: 8px; cursor: pointer; font-size: 13px; color: #555;
+    }
+    .btn-results:hover { background: #e0e3f0; }
+    .empty-state {
+      text-align: center; padding: 60px 24px; color: #aaa;
+    }
+    .empty-state svg { margin-bottom: 16px; opacity: 0.3; }
+    .empty-state p { font-size: 16px; }
+    #message {
+      padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;
+      font-size: 14px; display: none;
+    }
+    .msg-success { background: #e8f5e9; color: #2e7d32; }
+    .msg-error { background: #fce4ec; color: #c62828; }
+    .loading { text-align: center; padding: 40px; color: #aaa; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">IDMS</div>
+  <div class="nav-links">
+    <a href="/frontend/dashboard.html">Dashboard</a>
+    <a href="/frontend/ballots.html">Ballots</a>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1>🗳️ Voting Ballots</h1>
+      <p>View and participate in active elections</p>
+    </div>
+    <button class="btn-primary" id="btnCreateBallot" style="display:none" onclick="toggleForm()">
+      + Create Ballot
+    </button>
+  </div>
+
+  <div id="message"></div>
+
+  <!-- Admin Create Form -->
+  <div class="admin-form" id="createForm">
+    <h2>Create New Ballot</h2>
+    <div class="form-group">
+      <label>Title *</label>
+      <input type="text" id="ballotTitle" placeholder="e.g. Board Member Election 2026" />
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="ballotDesc" rows="3" placeholder="Describe the purpose of this ballot..."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Ballot Type</label>
+        <select id="ballotType">
+          <option value="single">Single Choice</option>
+          <option value="multiple">Multiple Choice</option>
+          <option value="yes_no">Yes / No</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="ballotStatus">
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Start Date</label>
+        <input type="datetime-local" id="startDate" />
+      </div>
+      <div class="form-group">
+        <label>End Date</label>
+        <input type="datetime-local" id="endDate" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Options (min 2, max 10)</label>
+      <div class="options-container" id="optionsContainer">
+        <div class="option-row">
+          <input type="text" placeholder="Option 1" class="option-input" />
+          <button class="btn-remove-option" onclick="removeOption(this)">✕</button>
+        </div>
+        <div class="option-row">
+          <input type="text" placeholder="Option 2" class="option-input" />
+          <button class="btn-remove-option" onclick="removeOption(this)">✕</button>
+        </div>
+      </div>
+      <button class="btn-add-option" onclick="addOption()">+ Add Option</button>
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="toggleForm()">Cancel</button>
+      <button class="btn-primary" onclick="createBallot()">Create Ballot</button>
+    </div>
+  </div>
+
+  <!-- Ballots Grid -->
+  <div id="ballotsContainer">
+    <div class="loading">Loading ballots...</div>
+  </div>
+</div>
+
+<script>
+  const API = 'https://idms-backend-deu6.onrender.com/api/v1';
+  const token = localStorage.getItem('token');
+
+  if (!token) window.location.href = '/frontend/login.html';
+
+  // Decode JWT to get role
+  function parseJWT(token) {
+    try {
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch(e) { return {}; }
+  }
+
+  const user = parseJWT(token);
+  const isAdmin = user.role === 'admin';
+
+  if (isAdmin) {
+    document.getElementById('btnCreateBallot').style.display = 'inline-block';
+  }
+
+  function showMessage(msg, type) {
+    const el = document.getElementById('message');
+    el.textContent = msg;
+    el.className = type === 'success' ? 'msg-success' : 'msg-error';
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 4000);
+  }
+
+  function toggleForm() {
+    const form = document.getElementById('createForm');
+    form.style.display = form.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function addOption() {
+    const container = document.getElementById('optionsContainer');
+    const count = container.querySelectorAll('.option-row').length;
+    if (count >= 10) return showMessage('Maximum 10 options allowed', 'error');
+    const div = document.createElement('div');
+    div.className = 'option-row';
+    div.innerHTML = `<input type="text" placeholder="Option ${count + 1}" class="option-input" />
+                     <button class="btn-remove-option" onclick="removeOption(this)">✕</button>`;
+    container.appendChild(div);
+  }
+
+  function removeOption(btn) {
+    const container = document.getElementById('optionsContainer');
+    if (container.querySelectorAll('.option-row').length <= 2) {
+      return showMessage('Minimum 2 options required', 'error');
+    }
+    btn.parentElement.remove();
+  }
+
+  async function createBallot() {
+    const options = [...document.querySelectorAll('.option-input')]
+      .map(i => i.value.trim()).filter(v => v);
+    if (options.length < 2) return showMessage('Add at least 2 options', 'error');
+
+    const body = {
+      title: document.getElementById('ballotTitle').value,
+      description: document.getElementById('ballotDesc').value,
+      ballot_type: document.getElementById('ballotType').value,
+      status: document.getElementById('ballotStatus').value,
+      start_date: document.getElementById('startDate').value || null,
+      end_date: document.getElementById('endDate').value || null,
+      options: options.map(o => ({ option_text: o }))
+    };
+
+    const res = await fetch(`${API}/ballots`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.status === 'success') {
+      showMessage('Ballot created successfully!', 'success');
+      toggleForm();
+      loadBallots();
+    } else {
+      showMessage(data.message, 'error');
+    }
+  }
+
+  async function loadBallots() {
+    const res = await fetch(`${API}/ballots`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const container = document.getElementById('ballotsContainer');
+
+    if (!data.data || data.data.length === 0) {
+      container.innerHTML = `<div class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/>
+          <line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="15" x2="12" y2="15"/>
+        </svg>
+        <p>No ballots available at the moment</p>
+      </div>`;
+      return;
+    }
+
+    container.innerHTML = `<div class="ballots-grid">
+      ${data.data.map(b => `
+        <div class="ballot-card">
+          <span class="ballot-status status-${b.status}">${b.status.toUpperCase()}</span>
+          <div class="ballot-title">${b.title}</div>
+          <div class="ballot-desc">${b.description || 'No description provided'}</div>
+          <div class="ballot-meta">
+            ${b.start_date ? '📅 ' + new Date(b.start_date).toLocaleDateString() : ''}
+            ${b.end_date ? ' → ' + new Date(b.end_date).toLocaleDateString() : ''}
+          </div>
+          <div class="ballot-actions">
+            ${b.status === 'published' ? `<button class="btn-vote" onclick="window.location.href='vote.html?id=${b.id}'">Vote Now</button>` : ''}
+            ${b.status === 'closed' || isAdmin ? `<button class="btn-results" onclick="window.location.href='results.html?id=${b.id}'">Results</button>` : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  function logout() {
+    localStorage.clear();
+    window.location.href = '/frontend/login.html';
+  }
+
+  loadBallots();
+</script>
+</body>
+</html>

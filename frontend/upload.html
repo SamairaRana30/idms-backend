@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IDMS Upload</title>
+
+    <link rel="stylesheet" href="css/upload.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Legacy File Upload</h1>
+
+    <div class="upload-box" id="dropArea">
+
+        <p>Drag & Drop File Here</p>
+
+        <p>or</p>
+
+        <input type="file" id="fileInput" hidden>
+
+        <button type="button" id="chooseBtn">
+            Choose File
+        </button>
+
+        <p id="selectedFileName"></p>
+
+    </div>
+
+    <button
+        type="button"
+        class="upload-btn"
+        id="uploadBtn"
+        onclick="uploadFile()"
+    >
+        Upload File
+    </button>
+
+    <div id="loader" class="loader hidden"></div>
+
+</div>
+
+<script src="js/upload.js"></script>
+
+</body>
+</html>
