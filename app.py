@@ -13,6 +13,7 @@ from blueprints.notifications import notifications_bp
 from blueprints.finances      import finances_bp
 from blueprints.analytics     import analytics_bp
 from blueprints.audit         import audit_bp
+from blueprints.chat          import chat_bp
 
 FRONTEND = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend')
 
@@ -28,7 +29,7 @@ def create_app():
 
     for bp in [auth_bp, users_bp, migration_bp, documents_bp,
                voting_bp, meetings_bp, notifications_bp,
-               finances_bp, analytics_bp, audit_bp]:
+               finances_bp, analytics_bp, audit_bp, chat_bp]:
         app.register_blueprint(bp)
 
     return app
