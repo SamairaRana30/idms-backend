@@ -1,9 +1,10 @@
 import re
+import uuid
 from flask import Blueprint, request, g
 from psycopg2.extras import RealDictCursor
 
 from middleware.auth import require_auth, require_admin
-from utils.supabase_client import get_db, close_db
+from utils.supabase_client import get_db, close_db, get_supabase
 from utils.helpers import success, error, paginate
 from utils.audit import log_action
 
@@ -19,10 +20,17 @@ def get_me():
     try:
         conn = get_db()
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute(
-            "SELECT id, full_name, email, role, is_active, created_at FROM users WHERE id = %s",
-            (g.user['user_id'],)
-        )
+        try:
+            cur.execute(
+                "SELECT id, full_name, email, role, is_active, created_at, photo_url FROM users WHERE id = %s",
+                (g.user['user_id'],)
+            )
+        except Exception:
+            conn.rollback()
+            cur.execute(
+                "SELECT id, full_name, email, role, is_active, created_at FROM users WHERE id = %s",
+                (g.user['user_id'],)
+            )
         user = cur.fetchone()
         if not user:
             return error('User not found', 404)
@@ -91,6 +99,91 @@ def get_users():
         )
         users = [dict(u) | {'id': str(u['id'])} for u in cur.fetchall()]
         return success({'users': users, 'total': total, 'page': page})
+    except Exception as e:
+        return error(str(e), 500)
+    finally:
+        close_db(conn, cur)
+
+
+@users_bp.route('/me/photo', methods=['POST'])
+@require_auth
+def upload_photo():
+    if 'photo' not in request.files:
+        return error('No photo provided', 400)
+    file      = request.files['photo']
+    mime_type = file.content_type or ''
+    if mime_type not in ('image/jpeg', 'image/png', 'image/webp', 'image/gif'):
+        return error('Only JPEG, PNG, WebP or GIF images are allowed', 400)
+
+    ext        = {'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif'}.get(mime_type, '.jpg')
+    file_bytes = file.read()
+    if len(file_bytes) > 5 * 1024 * 1024:
+        return error('Image must be under 5 MB', 400)
+
+    user_id      = g.user['user_id']
+    storage_path = f"avatars/{user_id}{ext}"
+    try:
+        sb = get_supabase()
+        try:
+            sb.storage.from_('avatars').remove([storage_path])
+        except Exception:
+            pass
+        sb.storage.from_('avatars').upload(
+            path=storage_path,
+            file=file_bytes,
+            file_options={'content-type': mime_type, 'upsert': 'true'}
+        )
+        public_url = sb.storage.from_('avatars').get_public_url(storage_path)
+    except Exception as e:
+        return error(f'Storage upload failed: {str(e)}', 500)
+
+    conn = cur = None
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+        cur.execute(
+            "UPDATE users SET photo_url = %s, updated_at = NOW() WHERE id = %s",
+            (public_url, user_id)
+        )
+        conn.commit()
+    except Exception:
+        if conn: conn.rollback()
+    finally:
+        close_db(conn, cur)
+
+    return success({'photo_url': public_url})
+
+
+@users_bp.route('/stats', methods=['GET'])
+@require_auth
+@require_admin
+def get_stats():
+    conn = cur = None
+    try:
+        conn = get_db()
+        cur  = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("""
+            SELECT
+                COUNT(*)                                     AS total,
+                COUNT(*) FILTER (WHERE is_active)            AS active,
+                COUNT(*) FILTER (WHERE NOT is_active)        AS inactive,
+                COUNT(*) FILTER (WHERE role = 'admin')       AS admins,
+                COUNT(*) FILTER (WHERE role = 'member')      AS members
+            FROM users
+        """)
+        counts = dict(cur.fetchone())
+
+        cur.execute("""
+            SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month,
+                   COUNT(*) AS new_members
+            FROM users
+            WHERE created_at >= NOW() - INTERVAL '6 months'
+            GROUP BY DATE_TRUNC('month', created_at)
+            ORDER BY DATE_TRUNC('month', created_at) ASC
+        """)
+        growth = [dict(r) for r in cur.fetchall()]
+
+        return success({**{k: int(v) for k, v in counts.items()}, 'growth': growth})
     except Exception as e:
         return error(str(e), 500)
     finally:

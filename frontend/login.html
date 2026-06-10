@@ -3,27 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IDMS | Login</title>
+  <title>IDMS | Sign In</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/frontend/css/auth.css">
 </head>
 <body>
+
   <div class="brand-panel">
     <div class="brand-content">
       <div class="brand-logo">IDMS</div>
       <h1 class="brand-title">Identity Management System</h1>
-      <p class="brand-subtitle">Secure access control and user management for your organisation.</p>
+      <p class="brand-subtitle">Secure access control and member management for your organisation.</p>
       <div class="brand-features">
-        <div class="feature-item">
-          <span class="feature-icon">&#10003;</span> Role-based access control
-        </div>
-        <div class="feature-item">
-          <span class="feature-icon">&#10003;</span> Encrypted authentication
-        </div>
-        <div class="feature-item">
-          <span class="feature-icon">&#10003;</span> Real-time user management
-        </div>
+        <div class="feature-item"><span class="feature-icon">✓</span> Role-based access control</div>
+        <div class="feature-item"><span class="feature-icon">✓</span> Encrypted authentication</div>
+        <div class="feature-item"><span class="feature-icon">✓</span> Real-time member management</div>
+        <div class="feature-item"><span class="feature-icon">✓</span> Document & finance tracking</div>
       </div>
     </div>
   </div>
@@ -36,17 +32,15 @@
       <form id="loginForm">
         <div class="input-group">
           <label>Email address</label>
-          <input id="email" type="email" placeholder="you@example.com">
+          <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
         </div>
-
         <div class="input-group">
           <label>Password</label>
           <div class="pw-wrap">
-            <input id="password" type="password" placeholder="Enter your password">
+            <input id="password" type="password" placeholder="Enter your password" autocomplete="current-password">
             <button type="button" class="pw-toggle" onclick="togglePw('password',this)">👁️</button>
           </div>
         </div>
-
         <button class="btn" type="submit">Sign In</button>
         <p id="message" class="message"></p>
       </form>
@@ -58,6 +52,8 @@
   </div>
 
   <script>
+    if (localStorage.getItem('token')) window.location.href = '/frontend/dashboard.html';
+
     function togglePw(id, btn) {
       const input = document.getElementById(id);
       input.type = input.type === 'password' ? 'text' : 'password';

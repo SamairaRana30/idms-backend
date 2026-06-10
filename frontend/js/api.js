@@ -40,10 +40,24 @@ async function apiGetMe() {
     return r.json();
 }
 
+async function apiUploadPhoto(file) {
+    const form = new FormData();
+    form.append('photo', file);
+    const r = await fetch(`${API}/users/me/photo`, {
+        method: 'POST', headers: authHeadersNoContent(), body: form
+    });
+    return r.json();
+}
+
 async function apiUpdateMe(data) {
     const r = await fetch(`${API}/users/me`, {
         method: 'PUT', headers: authHeaders(), body: JSON.stringify(data)
     });
+    return r.json();
+}
+
+async function apiGetUserStats() {
+    const r = await fetch(`${API}/users/stats`, { headers: authHeaders() });
     return r.json();
 }
 
@@ -290,6 +304,33 @@ async function apiGetFinanceReport() {
 async function apiEditFinanceRecord(id, data) {
     const r = await fetch(`${API}/finances/${id}`, {
         method: 'PUT', headers: authHeaders(), body: JSON.stringify(data)
+    });
+    return r.json();
+}
+
+// ── Chat ──────────────────────────────────────────────────────────────────────
+async function apiGetChannels() {
+    const r = await fetch(`${API}/chat/channels`, { headers: authHeaders() });
+    return r.json();
+}
+
+async function apiCreateChannel(data) {
+    const r = await fetch(`${API}/chat/channels`, {
+        method: 'POST', headers: authHeaders(), body: JSON.stringify(data)
+    });
+    return r.json();
+}
+
+async function apiGetMessages(channelId, afterId = 0) {
+    const r = await fetch(`${API}/chat/channels/${channelId}/messages?after=${afterId}&limit=100`, { headers: authHeaders() });
+    return r.json();
+}
+
+async function apiPostMessage(channelId, content, replyToId = null) {
+    const body = { content };
+    if (replyToId) body.reply_to_id = replyToId;
+    const r = await fetch(`${API}/chat/channels/${channelId}/messages`, {
+        method: 'POST', headers: authHeaders(), body: JSON.stringify(body)
     });
     return r.json();
 }

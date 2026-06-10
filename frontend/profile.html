@@ -1,50 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>IDMS | Profile</title>
-
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDMS | Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <style>
+    .profile-hero {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+    .profile-avatar-wrap { position: relative; flex-shrink: 0; }
+    .profile-avatar {
+      width: 90px; height: 90px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; font-weight: 700; color: #fff;
+      box-shadow: 0 4px 20px var(--accent-glow);
+      overflow: hidden;
+    }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-upload-btn {
+      position: absolute; bottom: -6px; right: -6px;
+      width: 28px; height: 28px;
+      background: var(--accent); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: 2px solid var(--bg-surface);
+      color: #fff; font-size: 13px; transition: background .2s;
+    }
+    .avatar-upload-btn:hover { background: var(--accent-dim); }
+    .profile-name { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+    .profile-meta { font-size: 13px; color: var(--text-muted); display: flex; gap: 16px; flex-wrap: wrap; }
+    .profile-meta span { display: flex; align-items: center; gap: 6px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media(max-width:600px){ .profile-hero{flex-direction:column;text-align:center} .two-col{grid-template-columns:1fr} }
+  </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container mt-5">
-    <div class="card mx-auto" style="max-width: 500px;">
-        <div class="card-body">
-
-            <!-- VIEW MODE -->
-            <div id="viewProfile">
-                <h4 id="fullName">Loading...</h4>
-                <p class="text-muted" id="role"></p>
-
-                <p><strong>Email:</strong> <span id="email"></span></p>
-                <p><strong>Phone:</strong> <span id="phone"></span></p>
-                <p><strong>Address:</strong> <span id="address"></span></p>
-                <p><strong>Joined:</strong> <span id="joinDate"></span></p>
-
-                <button class="btn btn-primary btn-sm mt-2" onclick="enableEdit()">Edit Profile</button>
-            </div>
-
-            <!-- EDIT MODE -->
-            <div id="editProfile" style="display:none;">
-                <h5>Edit Profile</h5>
-
-                <input id="editName" class="form-control mb-2" placeholder="Full Name">
-                <input id="editEmail" class="form-control mb-2" placeholder="Email">
-                <input id="editPhone" class="form-control mb-2" placeholder="Phone">
-                <input id="editAddress" class="form-control mb-2" placeholder="Address">
-
-                <button class="btn btn-success btn-sm" onclick="saveProfile()">Save</button>
-                <button class="btn btn-secondary btn-sm" onclick="cancelEdit()">Cancel</button>
-
-                <div id="message" class="mt-2 text-danger"></div>
-            </div>
-
+  <div class="sidebar">
+    <div class="sidebar-logo">IDMS</div>
+    <nav>
+      <div class="nav-section">Main</div>
+      <a href="/frontend/dashboard.html"     class="nav-item"><i class="bi bi-speedometer2 nav-icon"></i> Dashboard</a>
+      <div class="nav-section">Management</div>
+      <a href="/frontend/members.html"       class="nav-item admin-only"><i class="bi bi-people nav-icon"></i> Members</a>
+      <a href="/frontend/documents.html"     class="nav-item"><i class="bi bi-folder nav-icon"></i> Documents</a>
+      <a href="/frontend/voting.html"        class="nav-item"><i class="bi bi-check2-square nav-icon"></i> Voting</a>
+      <a href="/frontend/meetings.html"      class="nav-item"><i class="bi bi-calendar-event nav-icon"></i> Meetings</a>
+      <a href="/frontend/calendar.html"      class="nav-item"><i class="bi bi-calendar3 nav-icon"></i> Calendar</a>
+      <div class="nav-section">Communication</div>
+      <a href="/frontend/notifications.html" class="nav-item"><i class="bi bi-bell nav-icon"></i> Notifications</a>
+      <a href="/frontend/chat.html"          class="nav-item"><i class="bi bi-chat-dots nav-icon"></i> Chat</a>
+      <div class="nav-section">Finance</div>
+      <a href="/frontend/finances.html"      class="nav-item"><i class="bi bi-wallet2 nav-icon"></i> Finances</a>
+      <a href="/frontend/analytics.html"     class="nav-item admin-only"><i class="bi bi-bar-chart nav-icon"></i> Analytics</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/frontend/profile.html" class="nav-item active"><i class="bi bi-person-circle nav-icon"></i> Profile</a>
+      <div class="user-info">
+        <div class="avatar" id="avatarInitial"></div>
+        <div>
+          <div class="user-email" id="sidebarEmail"></div>
+          <div class="user-role"  id="sidebarRole"></div>
         </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
     </div>
-</div>
+  </div>
 
-<script src="/frontend/js/profile.js"></script>
+  <div class="main">
+    <div class="page-header">
+      <h1>Profile</h1>
+      <button class="btn btn-primary btn-sm" onclick="toggleEdit(true)" id="editBtn">
+        <i class="bi bi-pencil"></i> Edit Profile
+      </button>
+    </div>
+
+    <!-- Hero card -->
+    <div class="profile-hero">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar" id="profileAvatar">
+          <span id="avatarLetter">?</span>
+        </div>
+        <label class="avatar-upload-btn" for="photoInput" title="Upload photo">
+          <i class="bi bi-camera"></i>
+        </label>
+        <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="uploadPhoto(this)">
+      </div>
+      <div>
+        <div class="profile-name" id="heroName">Loading…</div>
+        <div class="profile-meta">
+          <span><i class="bi bi-envelope"></i> <span id="heroEmail">—</span></span>
+          <span><i class="bi bi-shield-check"></i> <span id="heroRole">—</span></span>
+          <span><i class="bi bi-calendar3"></i> Joined <span id="heroJoined">—</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- View mode -->
+    <div id="viewMode">
+      <div class="card">
+        <div class="card-title">Account Details</div>
+        <div class="profile-row"><span class="profile-label">Full Name</span><span id="pName">—</span></div>
+        <div class="profile-row"><span class="profile-label">Email</span><span id="pEmail">—</span></div>
+        <div class="profile-row"><span class="profile-label">Role</span><span id="pRole">—</span></div>
+        <div class="profile-row"><span class="profile-label">Status</span><span id="pStatus">—</span></div>
+        <div class="profile-row"><span class="profile-label">Member Since</span><span id="pJoined">—</span></div>
+      </div>
+    </div>
+
+    <!-- Edit mode -->
+    <div id="editMode" style="display:none">
+      <div class="card">
+        <div class="card-title">Edit Profile</div>
+        <div class="two-col">
+          <div class="mb-3">
+            <label class="form-label">Full Name</label>
+            <input id="editName" type="text" class="form-control" placeholder="Your full name">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email Address</label>
+            <input id="editEmail" type="email" class="form-control" placeholder="you@example.com">
+          </div>
+        </div>
+        <div id="editMsg" style="font-size:13px;color:var(--danger);margin-bottom:12px"></div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary btn-sm" onclick="saveProfile()">Save Changes</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="toggleEdit(false)">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/main.js"></script>
+  <script>
+    async function loadProfile() {
+      const res = await apiGetMe();
+      if (!res.success) return;
+      const u = res.data.user;
+
+      const avatarEl = document.getElementById('profileAvatar');
+      if (u.photo_url) {
+        avatarEl.innerHTML = `<img src="${u.photo_url}" alt="Profile photo">`;
+      } else {
+        document.getElementById('avatarLetter').innerText = (u.full_name || u.email || '?')[0].toUpperCase();
+      }
+      document.getElementById('heroName').innerText   = u.full_name || '—';
+      document.getElementById('heroEmail').innerText  = u.email || '—';
+      document.getElementById('heroRole').innerText   = u.role || '—';
+      document.getElementById('heroJoined').innerText = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB',{year:'numeric',month:'long',day:'numeric'}) : '—';
+
+      document.getElementById('pName').innerText   = u.full_name || '—';
+      document.getElementById('pEmail').innerText  = u.email || '—';
+      document.getElementById('pRole').innerHTML   = `<span class="badge badge-${u.role}">${u.role}</span>`;
+      document.getElementById('pStatus').innerHTML = u.is_active ? '<span class="badge badge-active">Active</span>' : '<span class="badge badge-inactive">Inactive</span>';
+      document.getElementById('pJoined').innerText = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB',{year:'numeric',month:'long',day:'numeric'}) : '—';
+
+      document.getElementById('editName').value  = u.full_name || '';
+      document.getElementById('editEmail').value = u.email || '';
+    }
+
+    function toggleEdit(on) {
+      document.getElementById('viewMode').style.display = on ? 'none' : 'block';
+      document.getElementById('editMode').style.display = on ? 'block' : 'none';
+      document.getElementById('editBtn').style.display  = on ? 'none' : '';
+      document.getElementById('editMsg').innerText = '';
+    }
+
+    async function saveProfile() {
+      const full_name = document.getElementById('editName').value.trim();
+      const email     = document.getElementById('editEmail').value.trim();
+      const msg       = document.getElementById('editMsg');
+      if (!full_name || !email) { msg.innerText = 'Name and email are required'; return; }
+
+      const res = await apiUpdateMe({ full_name, email });
+      if (res.success) {
+        localStorage.setItem('userName', full_name);
+        localStorage.setItem('userEmail', email);
+        toggleEdit(false);
+        loadProfile();
+        showToast('Profile updated successfully');
+      } else {
+        msg.innerText = res.error || 'Update failed';
+      }
+    }
+
+    async function uploadPhoto(input) {
+      const file = input.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { showToast('Image must be under 5 MB', 'danger'); return; }
+
+      // Preview immediately
+      const reader = new FileReader();
+      reader.onload = e => {
+        const el = document.getElementById('profileAvatar');
+        el.innerHTML = `<img src="${e.target.result}" alt="Profile photo">`;
+      };
+      reader.readAsDataURL(file);
+
+      const res = await apiUploadPhoto(file);
+      if (res.success) {
+        showToast('Photo updated successfully');
+      } else {
+        showToast(res.error || 'Upload failed', 'danger');
+      }
+    }
+
+    loadProfile();
+  </script>
 </body>
 </html>

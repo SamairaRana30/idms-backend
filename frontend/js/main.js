@@ -35,21 +35,21 @@ function showToast(message, type = 'success') {
     document.body.appendChild(container);
   }
 
-  const colors = { success: '#16a34a', danger: '#dc2626', warning: '#f59e0b', info: '#4f46e5' };
+  const colors = { success: '#10b981', danger: '#ef4444', warning: '#f59e0b', info: '#0ea5e9' };
   const icons  = { success: '✓', danger: '✕', warning: '⚠', info: 'ℹ' };
 
   const toast = document.createElement('div');
   toast.style.cssText = `
-    background:#fff; border-left:4px solid ${colors[type]||colors.info};
+    background:#0d1626; border:1px solid #1a2a42; border-left:3px solid ${colors[type]||colors.info};
     border-radius:10px; padding:14px 18px; min-width:260px; max-width:360px;
-    box-shadow:0 4px 20px rgba(0,0,0,0.12); display:flex; align-items:center;
+    box-shadow:0 4px 24px rgba(0,0,0,0.5); display:flex; align-items:center;
     gap:12px; font-size:13px; font-family:Poppins,sans-serif;
-    animation:slideIn .25s ease; color:#1e293b;
+    animation:slideIn .25s ease; color:#f1f5f9;
   `;
   toast.innerHTML = `
     <span style="color:${colors[type]||colors.info};font-weight:700;font-size:16px">${icons[type]||icons.info}</span>
     <span style="flex:1">${message}</span>
-    <span style="cursor:pointer;color:#94a3b8;font-size:16px" onclick="this.parentElement.remove()">×</span>
+    <span style="cursor:pointer;color:#475569;font-size:16px" onclick="this.parentElement.remove()">×</span>
   `;
 
   if (!document.getElementById('toastStyle')) {

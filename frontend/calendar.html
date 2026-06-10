@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDMS | Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <style>
+    .cal-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+    .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .cal-nav { display: flex; align-items: center; gap: 12px; }
+    .cal-nav button { background: var(--bg-elevated); border: 1px solid var(--border-strong); color: var(--text-secondary); width: 32px; height: 32px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s, color .2s; }
+    .cal-nav button:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+    .cal-month { font-size: 18px; font-weight: 700; color: var(--text-primary); min-width: 160px; text-align: center; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .cal-day-label { background: var(--bg-elevated); padding: 10px 4px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+    .cal-cell { background: var(--bg-surface); min-height: 90px; padding: 8px 6px; cursor: pointer; transition: background .15s; position: relative; }
+    .cal-cell:hover { background: var(--bg-hover); }
+    .cal-cell.today { background: var(--accent-bg); }
+    .cal-cell.today .cal-date { color: var(--accent); font-weight: 700; }
+    .cal-cell.other-month .cal-date { color: var(--text-muted); opacity: .4; }
+    .cal-cell.selected { background: var(--bg-elevated); outline: 2px solid var(--accent); outline-offset: -2px; }
+    .cal-date { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; }
+    .cal-event { font-size: 10px; background: var(--accent-bg); color: #38bdf8; border-radius: 3px; padding: 1px 5px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 2px solid var(--accent); }
+    .cal-event.meeting { background: var(--success-bg); color: #34d399; border-left-color: var(--success); }
+    .cal-event.voting  { background: var(--warning-bg); color: #fcd34d; border-left-color: var(--warning); }
+    .sidebar-panel { display: flex; flex-direction: column; gap: 16px; }
+    .events-panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+    .events-panel h6 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); margin-bottom: 14px; }
+    .event-item { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .event-item:last-child { border-bottom: none; }
+    .event-item-title { font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+    .event-item-meta { font-size: 11px; color: var(--text-muted); display: flex; gap: 8px; }
+    .event-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+    @media(max-width:900px){ .cal-layout{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <div class="sidebar-logo">IDMS</div>
+    <nav>
+      <div class="nav-section">Main</div>
+      <a href="/frontend/dashboard.html"     class="nav-item"><i class="bi bi-speedometer2 nav-icon"></i> Dashboard</a>
+      <div class="nav-section">Management</div>
+      <a href="/frontend/members.html"       class="nav-item admin-only"><i class="bi bi-people nav-icon"></i> Members</a>
+      <a href="/frontend/documents.html"     class="nav-item"><i class="bi bi-folder nav-icon"></i> Documents</a>
+      <a href="/frontend/voting.html"        class="nav-item"><i class="bi bi-check2-square nav-icon"></i> Voting</a>
+      <a href="/frontend/meetings.html"      class="nav-item"><i class="bi bi-calendar-event nav-icon"></i> Meetings</a>
+      <a href="/frontend/calendar.html"      class="nav-item active"><i class="bi bi-calendar3 nav-icon"></i> Calendar</a>
+      <div class="nav-section">Communication</div>
+      <a href="/frontend/notifications.html" class="nav-item"><i class="bi bi-bell nav-icon"></i> Notifications</a>
+      <a href="/frontend/chat.html"          class="nav-item"><i class="bi bi-chat-dots nav-icon"></i> Chat</a>
+      <div class="nav-section">Finance</div>
+      <a href="/frontend/finances.html"      class="nav-item"><i class="bi bi-wallet2 nav-icon"></i> Finances</a>
+      <a href="/frontend/analytics.html"     class="nav-item admin-only"><i class="bi bi-bar-chart nav-icon"></i> Analytics</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/frontend/profile.html" class="nav-item"><i class="bi bi-person-circle nav-icon"></i> Profile</a>
+      <div class="user-info">
+        <div class="avatar" id="avatarInitial"></div>
+        <div>
+          <div class="user-email" id="sidebarEmail"></div>
+          <div class="user-role"  id="sidebarRole"></div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="page-header">
+      <h1>Calendar</h1>
+      <div class="d-flex gap-2">
+        <div class="filter-tabs" style="margin-bottom:0">
+          <button class="filter-tab active" onclick="setView('month',this)">Month</button>
+          <button class="filter-tab" onclick="setView('list',this)">List</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Month view -->
+    <div id="monthView">
+      <div class="cal-layout">
+        <div>
+          <div class="cal-header">
+            <div class="cal-nav">
+              <button onclick="changeMonth(-1)"><i class="bi bi-chevron-left"></i></button>
+              <div class="cal-month" id="calMonthLabel"></div>
+              <button onclick="changeMonth(1)"><i class="bi bi-chevron-right"></i></button>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" onclick="goToday()">Today</button>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+
+        <div class="sidebar-panel">
+          <div class="events-panel">
+            <h6 id="selectedDateLabel">Upcoming Events</h6>
+            <div id="selectedDayEvents">
+              <div class="empty-state" style="padding:20px 0">
+                <p>No events for selected date</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="events-panel">
+            <h6>This Month</h6>
+            <div id="monthEventsList">
+              <div style="text-align:center;color:var(--text-muted);font-size:13px;padding:12px 0">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- List view -->
+    <div id="listView" style="display:none">
+      <div class="card">
+        <div class="card-title">All Upcoming Events</div>
+        <div id="listViewContent">
+          <div style="text-align:center;color:var(--text-muted);font-size:13px;padding:24px">Loading…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/main.js"></script>
+  <script src="/frontend/js/calendar.js"></script>
+</body>
+</html>

@@ -7,17 +7,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/frontend/css/dashboard.css">
   <style>
-    .option-label { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1.5px solid #e2e8f0; border-radius:10px; cursor:pointer; transition:border-color .15s,background .15s; margin-bottom:10px; }
-    .option-label:hover { border-color:#4f46e5; background:#fafbff; }
-    .option-label input[type=radio]:checked + span { font-weight:600; color:#4f46e5; }
-    input[type=radio]:checked ~ .option-label { border-color:#4f46e5; }
-    .result-bar { height:28px; background:linear-gradient(90deg,#4f46e5,#7c3aed); border-radius:6px; transition:width .6s ease; min-width:4px; }
+    .option-label { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1.5px solid var(--border); border-radius:10px; cursor:pointer; transition:border-color .15s,background .15s; margin-bottom:10px; }
+    .option-label:hover { border-color:var(--accent); background:var(--accent-bg); }
+    .option-label.selected { border-color:var(--accent); background:var(--accent-bg); }
+    .option-label.selected span { font-weight:600; color:#38bdf8; }
+    .result-bar { height:28px; background:linear-gradient(90deg,var(--accent),#6366f1); border-radius:6px; transition:width .6s ease; min-width:4px; }
     .result-row { margin-bottom:14px; }
-    .result-label { font-size:13px; font-weight:500; margin-bottom:4px; display:flex; justify-content:space-between; }
-    .result-track { background:#f1f5f9; border-radius:6px; overflow:hidden; }
-    .turnout-badge { background:#ede9fe; color:#5b21b6; font-size:12px; font-weight:600; padding:4px 12px; border-radius:20px; }
+    .result-label { font-size:13px; font-weight:500; margin-bottom:4px; display:flex; justify-content:space-between; color:var(--text-secondary); }
+    .result-track { background:var(--bg-elevated); border-radius:6px; overflow:hidden; }
+    .turnout-badge { background:rgba(99,102,241,0.15); color:#a5b4fc; font-size:12px; font-weight:600; padding:4px 12px; border-radius:20px; border:1px solid rgba(99,102,241,0.3); }
+    .ballot-meta { font-size:13px; color:var(--text-muted); display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; }
+    .ballot-meta span { display:flex; align-items:center; gap:6px; }
   </style>
 </head>
 <body>
@@ -25,16 +28,23 @@
   <div class="sidebar">
     <div class="sidebar-logo">IDMS</div>
     <nav>
-      <a href="/frontend/dashboard.html"     class="nav-item">Dashboard</a>
-      <a href="/frontend/members.html"       class="nav-item admin-only">Members</a>
-      <a href="/frontend/documents.html"     class="nav-item">Documents</a>
-      <a href="/frontend/voting.html"        class="nav-item">Voting</a>
-      <a href="/frontend/meetings.html"      class="nav-item">Meetings</a>
-      <a href="/frontend/finances.html"      class="nav-item">Finances</a>
-      <a href="/frontend/notifications.html" class="nav-item">Notifications</a>
-      <a href="/frontend/analytics.html"     class="nav-item admin-only">Analytics</a>
+      <div class="nav-section">Main</div>
+      <a href="/frontend/dashboard.html"     class="nav-item"><i class="bi bi-speedometer2 nav-icon"></i> Dashboard</a>
+      <div class="nav-section">Management</div>
+      <a href="/frontend/members.html"       class="nav-item admin-only"><i class="bi bi-people nav-icon"></i> Members</a>
+      <a href="/frontend/documents.html"     class="nav-item"><i class="bi bi-folder nav-icon"></i> Documents</a>
+      <a href="/frontend/voting.html"        class="nav-item"><i class="bi bi-check2-square nav-icon"></i> Voting</a>
+      <a href="/frontend/meetings.html"      class="nav-item"><i class="bi bi-calendar-event nav-icon"></i> Meetings</a>
+      <a href="/frontend/calendar.html"      class="nav-item"><i class="bi bi-calendar3 nav-icon"></i> Calendar</a>
+      <div class="nav-section">Communication</div>
+      <a href="/frontend/notifications.html" class="nav-item"><i class="bi bi-bell nav-icon"></i> Notifications</a>
+      <a href="/frontend/chat.html"          class="nav-item"><i class="bi bi-chat-dots nav-icon"></i> Chat</a>
+      <div class="nav-section">Finance</div>
+      <a href="/frontend/finances.html"      class="nav-item"><i class="bi bi-wallet2 nav-icon"></i> Finances</a>
+      <a href="/frontend/analytics.html"     class="nav-item admin-only"><i class="bi bi-bar-chart nav-icon"></i> Analytics</a>
     </nav>
     <div class="sidebar-footer">
+      <a href="/frontend/profile.html" class="nav-item"><i class="bi bi-person-circle nav-icon"></i> Profile</a>
       <div class="user-info">
         <div class="avatar" id="avatarInitial"></div>
         <div>
@@ -42,9 +52,10 @@
           <div class="user-role"  id="sidebarRole"></div>
         </div>
       </div>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
     </div>
   </div>
+
 
   <div class="main">
     <div class="topbar d-flex justify-content-between align-items-center">
@@ -52,7 +63,7 @@
         <a href="/frontend/voting.html" class="text-muted" style="font-size:13px;text-decoration:none">← Back to Voting</a>
         <h1 id="ballotTitle" class="mt-1">Loading…</h1>
       </div>
-      <div class="d-flex gap-2" id="adminControls" style="display:none!important"></div>
+      <div class="d-flex gap-2" id="adminControls" style="display:none"></div>
     </div>
 
     <div id="ballotContent"></div>
@@ -119,36 +130,49 @@
         `;
       }
 
+      // Info card
       let html = `<div class="card">
-        <p class="text-muted mb-1" style="font-size:13px">${ballot.description || ''}</p>`;
-
-      if (ballot.start_date) {
-        html += `<small class="text-muted">${new Date(ballot.start_date).toLocaleDateString()} – ${ballot.end_date ? new Date(ballot.end_date).toLocaleDateString() : '—'}</small>`;
-      }
-      html += `</div>`;
+        <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+          <span class="badge badge-${ballot.status}" style="font-size:12px">${ballot.status}</span>
+          ${ballot.created_by_name ? `<span style="font-size:12px;color:var(--text-muted)">Created by ${ballot.created_by_name}</span>` : ''}
+        </div>
+        ${ballot.description ? `<p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">${ballot.description}</p>` : ''}
+        ${ballot.start_date ? `<div class="ballot-meta">
+          <span><i class="bi bi-calendar"></i> Opens: ${new Date(ballot.start_date + 'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span>
+          ${ballot.end_date ? `<span><i class="bi bi-calendar-x"></i> Closes: ${new Date(ballot.end_date + 'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span>` : ''}
+        </div>` : ''}
+      </div>`;
 
       const showResultsView = isClosed || showResults || (isAdmin && has_voted);
 
-      if (isOpen && !has_voted && !showResults) {
+      if (!isOpen && !isClosed) {
+        // Draft state
+        html += `<div class="card text-center py-4">
+          <div style="font-size:40px;opacity:.4">🗳️</div>
+          <h5 class="mt-3" style="color:var(--text-primary)">Ballot Not Yet Open</h5>
+          <p style="color:var(--text-muted);font-size:13px">This ballot is a draft and has not been published for voting yet.</p>
+          ${isAdmin ? `<button class="btn btn-success btn-sm mt-2" onclick="changeStatus('open')">Publish Now</button>` : ''}
+        </div>`;
+      } else if (isOpen && !has_voted && !showResults) {
         // Voting form
         html += `<div class="card">
           <h2 class="card-title">Cast Your Vote</h2>
           <form id="voteForm">
             ${options.map(o => `
-              <label class="option-label" onclick="selectOption('${o.id}','${o.text.replace(/'/g,"\\'")}')">
-                <input type="radio" name="vote" value="${o.id}" style="accent-color:#4f46e5">
+              <label class="option-label" id="opt_${o.id}" onclick="selectOption('${o.id}','${o.text.replace(/'/g,"\\'")}', this)">
+                <input type="radio" name="vote" value="${o.id}" style="accent-color:var(--accent)">
                 <span>${o.text}</span>
               </label>
             `).join('')}
           </form>
-          <p id="voteMsg" class="text-danger mt-2" style="font-size:13px"></p>
-          <button class="btn btn-primary mt-2" onclick="submitVote()">Submit Vote</button>
+          <p id="voteMsg" style="color:var(--danger);font-size:13px;margin-top:10px;min-height:20px"></p>
+          <button class="btn btn-primary mt-1" onclick="submitVote()">Submit Vote</button>
         </div>`;
       } else if (isOpen && has_voted) {
         html += `<div class="card text-center py-4">
           <div style="font-size:40px">✅</div>
-          <h5 class="mt-2">You have already voted</h5>
-          <p class="text-muted" style="font-size:13px">Results will be visible once the ballot closes.</p>
+          <h5 class="mt-2" style="color:var(--text-primary)">Vote Recorded</h5>
+          <p style="color:var(--text-muted);font-size:13px">Results will be visible once the ballot closes.</p>
         </div>`;
       }
 
@@ -156,29 +180,31 @@
         const resultsRes = await apiGetBallotResults(ballotId);
         if (resultsRes.success) {
           const { results, total_votes, turnout_percent } = resultsRes.data;
+          const CHART_COLORS = ['#0ea5e9','#6366f1','#10b981','#f59e0b','#ef4444'];
           html += `<div class="card">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
               <h2 class="card-title mb-0">Results</h2>
               <span class="turnout-badge">Turnout: ${turnout_percent}%</span>
             </div>
-            <p class="text-muted mb-3" style="font-size:13px">Total votes: ${total_votes}</p>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:18px">Total votes cast: <strong style="color:var(--text-primary)">${total_votes}</strong></p>
             ${results.map(r => `
               <div class="result-row">
                 <div class="result-label">
                   <span>${r.text}</span>
-                  <span>${r.votes} votes (${r.percentage}%)</span>
+                  <span>${r.votes} vote${r.votes !== 1 ? 's' : ''} (${r.percentage}%)</span>
                 </div>
                 <div class="result-track">
-                  <div class="result-bar" style="width:${r.percentage}%"></div>
+                  <div class="result-bar" style="width:${r.percentage || 0}%"></div>
                 </div>
               </div>
             `).join('')}
-            <canvas id="resultsChart" class="mt-4" style="max-height:250px"></canvas>
+            <canvas id="resultsChart" class="mt-4" style="max-height:260px"></canvas>
           </div>`;
 
           document.getElementById('ballotContent').innerHTML = html;
 
-          // Chart.js
+          Chart.defaults.color        = '#94a3b8';
+          Chart.defaults.borderColor  = '#1a2a42';
           new Chart(document.getElementById('resultsChart'), {
             type: 'bar',
             data: {
@@ -186,16 +212,22 @@
               datasets: [{
                 label: 'Votes',
                 data: results.map(r => r.votes),
-                backgroundColor: results.map((_, i) =>
-                  ['#4f46e5','#7c3aed','#10b981','#f59e0b','#ef4444'][i % 5]
-                ),
+                backgroundColor: results.map((_, i) => CHART_COLORS[i % CHART_COLORS.length] + 'cc'),
+                borderColor:     results.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]),
+                borderWidth: 1,
                 borderRadius: 6
               }]
             },
             options: {
               responsive: true,
-              plugins: { legend: { display: false } },
-              scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+              plugins: {
+                legend: { display: false },
+                tooltip: { backgroundColor:'#0d1626', borderColor:'#1a2a42', borderWidth:1, titleColor:'#f1f5f9', bodyColor:'#94a3b8' }
+              },
+              scales: {
+                x: { grid: { color:'#1a2a42' }, ticks: { color:'#475569' } },
+                y: { beginAtZero:true, grid: { color:'#1a2a42' }, ticks: { color:'#475569', precision:0 } }
+              }
             }
           });
           return;
@@ -205,14 +237,18 @@
       document.getElementById('ballotContent').innerHTML = html;
     }
 
-    function selectOption(id, text) {
+    function selectOption(id, text, labelEl) {
       selectedOptionId   = id;
       selectedOptionText = text;
+      document.querySelectorAll('.option-label').forEach(l => l.classList.remove('selected'));
+      if (labelEl) labelEl.classList.add('selected');
+      document.getElementById('voteMsg').innerText = '';
     }
 
     function submitVote() {
       if (!selectedOptionId) {
-        document.getElementById('voteMsg').innerText = 'Please select an option';
+        const msg = document.getElementById('voteMsg');
+        if (msg) msg.innerText = 'Please select an option first';
         return;
       }
       document.getElementById('confirmOption').innerText = selectedOptionText;
@@ -223,11 +259,13 @@
       const res = await apiCastVote(ballotId, selectedOptionId);
       bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
       if (res.success) {
+        showToast('Vote recorded successfully');
         loadBallot();
       } else if (res.code === 409) {
-        document.getElementById('voteMsg').innerText = 'You have already voted on this ballot';
+        showToast('You have already voted on this ballot', 'warning');
+        loadBallot();
       } else {
-        document.getElementById('voteMsg').innerText = res.error || 'Vote failed';
+        showToast(res.error || 'Vote failed', 'danger');
       }
     });
 

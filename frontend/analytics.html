@@ -7,18 +7,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/frontend/css/dashboard.css">
   <style>
-    .drop-zone { border:2px dashed #c7d2fe; border-radius:12px; padding:32px; text-align:center; color:#94a3b8; cursor:pointer; transition:border-color .2s,background .2s; }
-    .drop-zone.over { border-color:#4f46e5; background:#f0f0fb; }
+    .drop-zone { border:2px dashed #c7d2fe; border-radius:12px; padding:32px; text-align:center; color:var(--text-muted); cursor:pointer; transition:border-color .2s,background .2s; }
+    .drop-zone.over { border-color:var(--accent); background:var(--accent-bg); }
     .chart-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-    .sentiment-bar { height:10px; border-radius:20px; background:#e2e8f0; overflow:hidden; margin-top:6px; }
+    .sentiment-bar { height:10px; border-radius:20px; background:var(--border); overflow:hidden; margin-top:6px; }
     .sentiment-fill { height:100%; border-radius:20px; transition:width .6s; }
-    .section-title { font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.8px; margin-bottom:16px; }
+    .section-title { font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:16px; }
     .highlight-card { padding:14px 16px; border-radius:10px; margin-bottom:10px; font-size:13px; }
     .highlight-positive { background:#f0fdf4; border-left:4px solid #16a34a; }
-    .highlight-negative { background:#fff1f2; border-left:4px solid #dc2626; }
-    .spam-item { padding:10px 14px; border-radius:8px; background:#fff7ed; border-left:4px solid #f59e0b; margin-bottom:8px; font-size:12px; }
+    .highlight-negative { background:var(--bg-surface)1f2; border-left:4px solid #dc2626; }
+    .spam-item { padding:10px 14px; border-radius:8px; background:var(--bg-surface)7ed; border-left:4px solid #f59e0b; margin-bottom:8px; font-size:12px; }
     .influence-badge { background:#ede9fe; color:#5b21b6; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; }
   </style>
 </head>
@@ -26,23 +27,34 @@
   <div class="sidebar">
     <div class="sidebar-logo">IDMS</div>
     <nav>
-      <a href="/frontend/dashboard.html"     class="nav-item">Dashboard</a>
-      <a href="/frontend/members.html"       class="nav-item admin-only">Members</a>
-      <a href="/frontend/documents.html"     class="nav-item">Documents</a>
-      <a href="/frontend/voting.html"        class="nav-item">Voting</a>
-      <a href="/frontend/meetings.html"      class="nav-item">Meetings</a>
-      <a href="/frontend/finances.html"      class="nav-item">Finances</a>
-      <a href="/frontend/notifications.html" class="nav-item">Notifications</a>
-      <a href="/frontend/analytics.html"     class="nav-item admin-only">Analytics</a>
+      <div class="nav-section">Main</div>
+      <a href="/frontend/dashboard.html"     class="nav-item"><i class="bi bi-speedometer2 nav-icon"></i> Dashboard</a>
+      <div class="nav-section">Management</div>
+      <a href="/frontend/members.html"       class="nav-item admin-only"><i class="bi bi-people nav-icon"></i> Members</a>
+      <a href="/frontend/documents.html"     class="nav-item"><i class="bi bi-folder nav-icon"></i> Documents</a>
+      <a href="/frontend/voting.html"        class="nav-item"><i class="bi bi-check2-square nav-icon"></i> Voting</a>
+      <a href="/frontend/meetings.html"      class="nav-item"><i class="bi bi-calendar-event nav-icon"></i> Meetings</a>
+      <a href="/frontend/calendar.html"      class="nav-item"><i class="bi bi-calendar3 nav-icon"></i> Calendar</a>
+      <div class="nav-section">Communication</div>
+      <a href="/frontend/notifications.html" class="nav-item"><i class="bi bi-bell nav-icon"></i> Notifications</a>
+      <a href="/frontend/chat.html"          class="nav-item"><i class="bi bi-chat-dots nav-icon"></i> Chat</a>
+      <div class="nav-section">Finance</div>
+      <a href="/frontend/finances.html"      class="nav-item"><i class="bi bi-wallet2 nav-icon"></i> Finances</a>
+      <a href="/frontend/analytics.html"     class="nav-item admin-only"><i class="bi bi-bar-chart nav-icon"></i> Analytics</a>
     </nav>
     <div class="sidebar-footer">
+      <a href="/frontend/profile.html" class="nav-item"><i class="bi bi-person-circle nav-icon"></i> Profile</a>
       <div class="user-info">
         <div class="avatar" id="avatarInitial"></div>
-        <div><div class="user-email" id="sidebarEmail"></div><div class="user-role" id="sidebarRole"></div></div>
+        <div>
+          <div class="user-email" id="sidebarEmail"></div>
+          <div class="user-role"  id="sidebarRole"></div>
+        </div>
       </div>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
     </div>
   </div>
+
 
   <div class="main">
     <div class="topbar"><h1>Chat Analytics</h1></div>
@@ -222,7 +234,7 @@
       if (pieChart) pieChart.destroy();
       pieChart = new Chart(document.getElementById('pieChart'), {
         type: 'doughnut',
-        data: { labels:['Text','Media'], datasets:[{ data:[a.text_count, a.media_count], backgroundColor:['#4f46e5','#10b981'], borderWidth:0 }] },
+        data: { labels:['Text','Media'], datasets:[{ data:[a.text_count, a.media_count], backgroundColor:['var(--accent)','#10b981'], borderWidth:0 }] },
         options: { responsive:true, plugins:{ legend:{ position:'bottom' } } }
       });
 
@@ -231,7 +243,7 @@
       if (hourChart) hourChart.destroy();
       hourChart = new Chart(document.getElementById('hourChart'), {
         type:'bar',
-        data:{ labels: Array.from({length:24},(_,i)=>`${i}:00`), datasets:[{ label:'Messages', data:Array.from({length:24},(_,i)=>hourly[i]||0), backgroundColor:'#4f46e5', borderRadius:4 }] },
+        data:{ labels: Array.from({length:24},(_,i)=>`${i}:00`), datasets:[{ label:'Messages', data:Array.from({length:24},(_,i)=>hourly[i]||0), backgroundColor:'var(--accent)', borderRadius:4 }] },
         options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
       });
 
@@ -241,7 +253,7 @@
       if (daily.length) {
         dailyChart = new Chart(document.getElementById('dailyChart'), {
           type:'line',
-          data:{ labels:daily.map(d=>d.date), datasets:[{ label:'Messages per day', data:daily.map(d=>d.count), borderColor:'#4f46e5', backgroundColor:'rgba(79,70,229,0.1)', tension:0.3, fill:true, pointRadius:3 }] },
+          data:{ labels:daily.map(d=>d.date), datasets:[{ label:'Messages per day', data:daily.map(d=>d.count), borderColor:'var(--accent)', backgroundColor:'rgba(79,70,229,0.1)', tension:0.3, fill:true, pointRadius:3 }] },
           options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
         });
       }
