@@ -1,5 +1,5 @@
 import os
-from flask import Flask, send_from_directory, jsonify
+from flask import Flask, send_from_directory, jsonify, redirect
 from flask_cors import CORS
 from config import Config
 
@@ -46,7 +46,7 @@ def frontend(filename='index.html'):
 
 @app.route('/')
 def home():
-    return send_from_directory(FRONTEND, 'index.html')
+    return redirect('/frontend/index.html')
 
 
 if __name__ == '__main__':
