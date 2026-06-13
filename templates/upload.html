@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Upload Chat - {{ settings.APP_NAME }}{% endblock %}
+{% block page_title %}Upload WhatsApp Chat{% endblock %}
+{% block page_subtitle %}Import exported .txt chat files for analysis{% endblock %}
+{% block topbar_actions %}{% endblock %}
+{% block content %}
+<div class="form-card">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="kpi-icon green"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+        <div>
+            <h5 class="mb-0 fw-bold">Import Chat Export</h5>
+            <p class="text-muted small mb-0">Supports Android and iPhone WhatsApp .txt exports</p>
+        </div>
+    </div>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label">Group Name</label>
+            <input type="text" name="group_name" id="groupName" class="form-control" placeholder="e.g. Team GGS" required>
+        </div>
+        <div class="mb-4">
+            <label class="form-label">Chat Export File (.txt)</label>
+            <div class="file-input-wrapper">
+                <i class="bi bi-file-earmark-text d-block"></i>
+                <p class="text-muted small mb-2">Choose a WhatsApp exported chat file</p>
+                <input type="file" name="file" id="chatFile" class="form-control" accept=".txt" required>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-wa">
+            <i class="bi bi-upload me-1"></i> Upload &amp; Import
+        </button>
+    </form>
+    <div id="uploadResult" class="mt-3"></div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="/static/js/upload.js"></script>
+{% endblock %}

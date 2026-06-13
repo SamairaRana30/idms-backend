@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - {{ settings.APP_NAME }}{% endblock %}
+{% block page_title %}Dashboard Home{% endblock %}
+{% block page_subtitle %}Overview of your WhatsApp group analytics{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4" id="kpi-cards">
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="kpi-icon green"><i class="bi bi-chat-text-fill"></i></div>
+            <div class="kpi-content">
+                <h6>Total Messages</h6>
+                <h3 id="kpi-total">—</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="kpi-icon blue"><i class="bi bi-person-fill-check"></i></div>
+            <div class="kpi-content">
+                <h6>Top Active User</h6>
+                <h3 id="kpi-top-user">—</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="kpi-icon orange"><i class="bi bi-emoji-smile-fill"></i></div>
+            <div class="kpi-content">
+                <h6>Positive Sentiment</h6>
+                <h3 id="kpi-positive">—</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="kpi-icon purple"><i class="bi bi-clock-fill"></i></div>
+            <div class="kpi-content">
+                <h6>Busiest Hour</h6>
+                <h3 id="kpi-peak">—</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h5><i class="bi bi-graph-up me-2 text-success"></i>Daily Message Frequency</h5>
+                <span>Messages per day</span>
+            </div>
+            <div class="chart-card-body">
+                <canvas id="dailyChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h5><i class="bi bi-pie-chart-fill me-2 text-success"></i>Media Breakdown</h5>
+                <span>By type</span>
+            </div>
+            <div class="chart-card-body">
+                <canvas id="mediaChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

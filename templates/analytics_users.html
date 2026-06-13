@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}User Analytics{% endblock %}
+{% block page_title %}User Analytics{% endblock %}
+{% block page_subtitle %}Influence scores and user rankings{% endblock %}
+{% block content %}
+<div class="chart-card">
+    <div class="chart-card-header">
+        <h5><i class="bi bi-star-fill me-2 text-warning"></i>Influence Scores</h5>
+        <span>Ranked by engagement</span>
+    </div>
+    <div class="chart-card-body"><canvas id="influenceChart"></canvas></div>
+</div>
+{% endblock %}
+{% block extra_scripts %}<script src="/static/js/users.js"></script>{% endblock %}

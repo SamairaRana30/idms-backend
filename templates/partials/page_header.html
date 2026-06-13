@@ -1,0 +1,14 @@
+<div class="topbar">
+    <div class="d-flex align-items-center gap-3">
+        <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="page-title-block">
+            <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+            <p>{% block page_subtitle %}WhatsApp group communication insights{% endblock %}</p>
+        </div>
+    </div>
+    {% block topbar_actions %}
+    {% include "partials/group_selector.html" %}
+    {% endblock %}
+</div>

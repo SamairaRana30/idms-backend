@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Network Analytics{% endblock %}
+{% block page_title %}Network Analytics{% endblock %}
+{% block page_subtitle %}Communication patterns and centrality{% endblock %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h5><i class="bi bi-diagram-3 me-2 text-primary"></i>Degree Centrality</h5>
+            </div>
+            <div class="chart-card-body"><canvas id="networkCanvas"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h5><i class="bi bi-info-circle me-2"></i>Network Stats</h5>
+            </div>
+            <div class="chart-card-body">
+                <ul id="networkStats" class="list-group list-group-flush stat-list"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}<script src="/static/js/network.js"></script>{% endblock %}

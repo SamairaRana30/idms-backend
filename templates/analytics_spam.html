@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Spam Analytics{% endblock %}
+{% block page_title %}Spam Analytics{% endblock %}
+{% block page_subtitle %}Detected spam messages and suspected users{% endblock %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h5><i class="bi bi-person-exclamation me-2 text-danger"></i>Suspected Users</h5>
+            </div>
+            <div class="chart-card-body"><canvas id="spamUsersChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h5><i class="bi bi-shield-x me-2 text-danger"></i>Spam Messages</h5>
+            </div>
+            <div class="chart-card-body"><div id="spamList" class="spam-list"></div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}<script src="/static/js/spam.js"></script>{% endblock %}

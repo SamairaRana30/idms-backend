@@ -1,0 +1,60 @@
+<aside class="sidebar" id="sidebar">
+    <a class="sidebar-brand" href="/">
+        <div class="brand-icon"><i class="bi bi-whatsapp"></i></div>
+        <div>
+            <div class="brand-text">WhatsApp Analytics</div>
+            <div class="brand-sub">Organization X</div>
+        </div>
+    </a>
+
+    <nav class="sidebar-nav">
+        <div class="sidebar-section">Overview</div>
+        <a class="sidebar-link {% if request.url.path == '/' %}active{% endif %}" href="/">
+            <i class="bi bi-grid-1x2-fill"></i> Dashboard
+        </a>
+        {% if user.role.value == 'admin' %}
+        <a class="sidebar-link {% if request.url.path == '/upload' %}active{% endif %}" href="/upload">
+            <i class="bi bi-cloud-arrow-up-fill"></i> Upload Chat
+        </a>
+        {% endif %}
+
+        <div class="sidebar-section">Analytics</div>
+        <a class="sidebar-link {% if request.url.path == '/analytics/activity' %}active{% endif %}" href="/analytics/activity">
+            <i class="bi bi-bar-chart-fill"></i> Activity
+        </a>
+        <a class="sidebar-link {% if request.url.path == '/analytics/sentiment' %}active{% endif %}" href="/analytics/sentiment">
+            <i class="bi bi-emoji-smile-fill"></i> Sentiment
+        </a>
+        <a class="sidebar-link {% if request.url.path == '/analytics/spam' %}active{% endif %}" href="/analytics/spam">
+            <i class="bi bi-shield-exclamation"></i> Spam
+        </a>
+        <a class="sidebar-link {% if request.url.path == '/analytics/users' %}active{% endif %}" href="/analytics/users">
+            <i class="bi bi-people-fill"></i> Users
+        </a>
+        <a class="sidebar-link {% if request.url.path == '/analytics/network' %}active{% endif %}" href="/analytics/network">
+            <i class="bi bi-diagram-3-fill"></i> Network
+        </a>
+        <a class="sidebar-link {% if request.url.path == '/analytics/peak-hours' %}active{% endif %}" href="/analytics/peak-hours">
+            <i class="bi bi-clock-fill"></i> Peak Hours
+        </a>
+
+        <div class="sidebar-section">Reports</div>
+        <a class="sidebar-link {% if request.url.path == '/reports' %}active{% endif %}" href="/reports">
+            <i class="bi bi-file-earmark-bar-graph-fill"></i> Combined Reports
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="user-badge">
+            <div class="user-avatar">{{ user.username[0]|upper }}</div>
+            <div class="user-info">
+                <div class="user-name">{{ user.username }}</div>
+                <div class="user-role">{{ user.role.value }}</div>
+            </div>
+        </div>
+        <a href="/logout" class="btn btn-outline-wa w-100">
+            <i class="bi bi-box-arrow-right me-1"></i> Logout
+        </a>
+    </div>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
