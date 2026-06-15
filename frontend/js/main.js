@@ -13,7 +13,16 @@ function requireAuth() {
   return true;
 }
 
-function logout() {
+async function logout() {
+  try {
+    const token = getToken();
+    if (token) {
+      await fetch('/api/v1/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+      });
+    }
+  } catch (e) {}
   localStorage.clear();
   window.location.href = '/frontend/index.html';
 }

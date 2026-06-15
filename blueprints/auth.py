@@ -1,4 +1,5 @@
 import re
+import uuid
 import base64
 import bcrypt
 import jwt
@@ -8,7 +9,7 @@ from psycopg2 import IntegrityError
 from psycopg2.extras import RealDictCursor
 
 from config import Config
-from middleware.auth import require_auth
+from middleware.auth import require_auth, revoke_jti
 from utils.supabase_client import get_db, close_db
 from utils.helpers import success, error
 
@@ -88,6 +89,7 @@ def login():
             'email':     user['email'],
             'full_name': user['full_name'],
             'role':      user['role'],
+            'jti':       str(uuid.uuid4()),
             'exp':       datetime.now(timezone.utc) + timedelta(hours=24)
         }, Config.JWT_SECRET, algorithm='HS256')
 
@@ -105,6 +107,15 @@ def login():
         return error(str(e), 500)
     finally:
         close_db(conn, cur)
+
+
+@auth_bp.route('/logout', methods=['POST'])
+@require_auth
+def logout():
+    jti = g.user.get('jti')
+    if jti:
+        revoke_jti(jti)
+    return success({'message': 'Logged out successfully'})
 
 
 @auth_bp.route('/profile', methods=['GET'])

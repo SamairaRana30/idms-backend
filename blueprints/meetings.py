@@ -1,4 +1,5 @@
 import smtplib
+from datetime import datetime, timezone
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -84,6 +85,15 @@ def create_meeting():
 
     if not title or not scheduled_at:
         return error('Title and scheduled_at are required', 400)
+
+    try:
+        sched_dt = datetime.fromisoformat(scheduled_at.replace('Z', '+00:00'))
+        if sched_dt.tzinfo is None:
+            sched_dt = sched_dt.replace(tzinfo=timezone.utc)
+        if sched_dt < datetime.now(timezone.utc):
+            return error('Meeting date cannot be in the past', 400)
+    except ValueError:
+        return error('Invalid date format for scheduled_at', 400)
 
     conn = cur = None
     try:
