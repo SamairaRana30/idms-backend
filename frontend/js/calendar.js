@@ -5,6 +5,11 @@ let selectedDay = null;
 const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
+// Use LOCAL date string (YYYY-MM-DD) to avoid UTC-shift mismatches
+function localStr(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+
 async function loadEvents() {
   try {
     const [meetRes, ballotRes] = await Promise.all([
@@ -15,7 +20,7 @@ async function loadEvents() {
     if (meetRes.success) {
       allEvents.push(...meetRes.data.meetings.map(m => ({
         id: m.id, title: m.title,
-        date: m.scheduled_at ? m.scheduled_at.slice(0,10) : null,
+        date: m.scheduled_at ? localStr(new Date(m.scheduled_at)) : null,
         time: m.scheduled_at ? new Date(m.scheduled_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '',
         type: 'meeting', status: m.status,
         location: m.location || ''
@@ -24,8 +29,8 @@ async function loadEvents() {
     if (ballotRes.success) {
       allEvents.push(...ballotRes.data.ballots.flatMap(b => {
         const evs = [];
-        if (b.start_date) evs.push({ id:b.id, title:`Vote opens: ${b.title}`, date:b.start_date.slice(0,10), time:'', type:'voting', status:b.status });
-        if (b.end_date)   evs.push({ id:b.id, title:`Vote closes: ${b.title}`, date:b.end_date.slice(0,10),   time:'', type:'voting', status:b.status });
+        if (b.start_date) evs.push({ id:b.id, title:`Vote opens: ${b.title}`, date:localStr(new Date(b.start_date)), time:'', type:'voting', status:b.status });
+        if (b.end_date)   evs.push({ id:b.id, title:`Vote closes: ${b.title}`, date:localStr(new Date(b.end_date)),   time:'', type:'voting', status:b.status });
         return evs;
       }));
     }
@@ -45,7 +50,7 @@ function renderCalendar() {
 
   const firstDay = new Date(y, m, 1).getDay();
   const daysInMonth = new Date(y, m+1, 0).getDate();
-  const today = new Date().toISOString().slice(0,10);
+  const today = localStr(new Date());
 
   // Cells from previous month
   for (let i = 0; i < firstDay; i++) {
@@ -57,8 +62,8 @@ function renderCalendar() {
   for (let day = 1; day <= daysInMonth; day++) {
     const d = new Date(y, m, day);
     const cell = makeCell(d, false);
-    if (d.toISOString().slice(0,10) === today) cell.classList.add('today');
-    if (selectedDay && d.toISOString().slice(0,10) === selectedDay) cell.classList.add('selected');
+    if (localStr(d) === today) cell.classList.add('today');
+    if (selectedDay && localStr(d) === selectedDay) cell.classList.add('selected');
     grid.appendChild(cell);
   }
 
@@ -71,7 +76,7 @@ function renderCalendar() {
 }
 
 function makeCell(date, otherMonth) {
-  const dateStr = date.toISOString().slice(0,10);
+  const dateStr = localStr(date);
   const dayEvents = allEvents.filter(e => e.date === dateStr);
   const cell = document.createElement('div');
   cell.className = 'cal-cell' + (otherMonth ? ' other-month' : '');
@@ -134,7 +139,7 @@ function renderMonthList() {
 }
 
 function renderListView() {
-  const today = new Date().toISOString().slice(0,10);
+  const today = localStr(new Date());
   const upcoming = allEvents.filter(e => e.date >= today).sort((a,b) => a.date.localeCompare(b.date));
   const container = document.getElementById('listViewContent');
   if (!upcoming.length) {
