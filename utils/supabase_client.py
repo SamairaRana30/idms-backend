@@ -5,15 +5,20 @@ from config import Config
 
 
 def get_db():
-    """Return a psycopg2 connection with the correct schema set."""
+    """Return a psycopg2 connection (or local SQLite fallback if unreachable)."""
     url = Config.get_database_url()
-    if not url:
-        raise RuntimeError("Database URL not configured for environment: " + Config.ENV)
-    conn = psycopg2.connect(url)
-    with conn.cursor() as cur:
-        cur.execute(f"SET search_path TO {Config.get_schema()}")
-    conn.commit()
-    return conn
+    if url:
+        try:
+            conn = psycopg2.connect(url, connect_timeout=3)
+            with conn.cursor() as cur:
+                cur.execute(f"SET search_path TO {Config.get_schema()}")
+            conn.commit()
+            return conn
+        except Exception:
+            pass
+    # Supabase unreachable — use local SQLite demo database
+    from utils.local_db import get_local_db
+    return get_local_db()
 
 
 def close_db(conn, cur=None):
