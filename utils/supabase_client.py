@@ -5,18 +5,20 @@ from config import Config
 
 
 def get_db():
-    """Return a psycopg2 connection (or local SQLite fallback if unreachable)."""
+    """Return a psycopg2 connection (or local SQLite fallback in dev if unreachable)."""
     url = Config.get_database_url()
     if url:
+        timeout = 3 if Config.ENV == 'development' else 30
         try:
-            conn = psycopg2.connect(url, connect_timeout=3)
+            conn = psycopg2.connect(url, connect_timeout=timeout)
             with conn.cursor() as cur:
                 cur.execute(f"SET search_path TO {Config.get_schema()}")
             conn.commit()
             return conn
         except Exception:
-            pass
-    # Supabase unreachable — use local SQLite demo database
+            if Config.ENV != 'development':
+                raise
+    # Dev only: Supabase unreachable — fall back to local SQLite demo database
     from utils.local_db import get_local_db
     return get_local_db()
 
