@@ -38,14 +38,20 @@ def create_app():
 app = create_app()
 
 
+@app.route('/version')
+def version():
+    return jsonify({'version': '4', 'status': 'api-fix-active'})
+
+
 @app.route('/frontend/js/api.js')
 def serve_api_js():
     path = os.path.join(FRONTEND, 'js', 'api.js')
     with open(path, 'r') as f:
         content = f.read()
-    content = content.replace("const API = '/api/v1';", "window.API = window.API || '/api/v1';")
+    content = content.replace("const API = '/api/v1';", "")
+    content = "window.API = window.API || '/api/v1';\n" + content.lstrip('\n')
     return Response(content, mimetype='application/javascript',
-                    headers={'Cache-Control': 'no-cache, must-revalidate'})
+                    headers={'Cache-Control': 'no-store, no-cache, must-revalidate', 'Pragma': 'no-cache'})
 
 
 @app.route('/frontend/js/main.js')
@@ -53,9 +59,9 @@ def serve_main_js():
     path = os.path.join(FRONTEND, 'js', 'main.js')
     with open(path, 'r') as f:
         content = f.read()
-    content = content.replace("const API = '/api/v1';\n", "")
+    content = content.replace("const API = '/api/v1';\n", "").replace("const API = '/api/v1';", "")
     return Response(content, mimetype='application/javascript',
-                    headers={'Cache-Control': 'no-cache, must-revalidate'})
+                    headers={'Cache-Control': 'no-store, no-cache, must-revalidate', 'Pragma': 'no-cache'})
 
 
 @app.route('/frontend/')
