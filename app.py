@@ -41,7 +41,9 @@ app = create_app()
 @app.route('/frontend/')
 @app.route('/frontend/<path:filename>')
 def frontend(filename='index.html'):
-    return send_from_directory(FRONTEND, filename)
+    response = send_from_directory(FRONTEND, filename)
+    response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    return response
 
 
 @app.route('/')
