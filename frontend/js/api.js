@@ -1,4 +1,4 @@
-const API = '/api/v1';
+window.API = window.API || '/api/v1';
 
 function authHeaders() {
     const token = localStorage.getItem('token');
