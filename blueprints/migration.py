@@ -59,7 +59,7 @@ def health_check():
 
     return success({
         'status':      'ok',
-        'version':     '1.0',
+        'version':     '2.0',
         'database':    db_status,
         'environment': Config.ENV,
         'schema':      Config.get_schema()
