@@ -1,5 +1,5 @@
 import os
-from flask import Flask, send_from_directory, jsonify, redirect
+from flask import Flask, send_from_directory, jsonify, redirect, Response
 from flask_cors import CORS
 from config import Config
 
@@ -36,6 +36,26 @@ def create_app():
 
 
 app = create_app()
+
+
+@app.route('/frontend/js/api.js')
+def serve_api_js():
+    path = os.path.join(FRONTEND, 'js', 'api.js')
+    with open(path, 'r') as f:
+        content = f.read()
+    content = content.replace("const API = '/api/v1';", "window.API = window.API || '/api/v1';")
+    return Response(content, mimetype='application/javascript',
+                    headers={'Cache-Control': 'no-cache, must-revalidate'})
+
+
+@app.route('/frontend/js/main.js')
+def serve_main_js():
+    path = os.path.join(FRONTEND, 'js', 'main.js')
+    with open(path, 'r') as f:
+        content = f.read()
+    content = content.replace("const API = '/api/v1';\n", "")
+    return Response(content, mimetype='application/javascript',
+                    headers={'Cache-Control': 'no-cache, must-revalidate'})
 
 
 @app.route('/frontend/')
