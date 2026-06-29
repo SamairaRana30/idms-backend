@@ -20,11 +20,11 @@
     .channel-name { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
     .channel-item.active .channel-name { color: #38bdf8; }
     .channel-preview { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-    .chat-area { display: flex; flex-direction: column; background: var(--bg-base); }
-    .chat-header { padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--bg-surface); display: flex; align-items: center; gap: 10px; }
+    .chat-area { display: flex; flex-direction: column; background: var(--bg-base); min-height: 0; }
+    .chat-header { padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--bg-surface); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
     .chat-header h5 { font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0; }
     .chat-header small { color: var(--text-muted); font-size: 12px; }
-    .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 2px; }
+    .chat-messages { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 2px; }
     .msg-group { margin-bottom: 16px; }
     .msg-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
     .msg-author { font-size: 13px; font-weight: 600; color: var(--text-primary); }

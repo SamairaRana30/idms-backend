@@ -122,6 +122,31 @@ def create_channel():
         close_db(conn, cur)
 
 
+@chat_bp.route('/channels/<int:channel_id>', methods=['DELETE'])
+@require_auth
+@require_admin
+def delete_channel(channel_id):
+    err = _ensure_or_error()
+    if err: return err
+    conn = cur = None
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+        cur.execute("SELECT name FROM chat_channels WHERE id = %s", (channel_id,))
+        row = cur.fetchone()
+        if not row:
+            return error('Channel not found', 404)
+        cur.execute("DELETE FROM chat_messages WHERE channel_id = %s", (channel_id,))
+        cur.execute("DELETE FROM chat_channels WHERE id = %s", (channel_id,))
+        conn.commit()
+        return success({'message': 'Channel deleted'})
+    except Exception as e:
+        if conn: conn.rollback()
+        return error(str(e), 500)
+    finally:
+        close_db(conn, cur)
+
+
 # ── Messages ───────────────────────────────────────────────────────────────────
 
 @chat_bp.route('/channels/<int:channel_id>/messages', methods=['GET'])

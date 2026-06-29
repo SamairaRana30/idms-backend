@@ -22,10 +22,15 @@ async function loadChannels() {
     list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px">No channels yet</div>';
     return;
   }
+  const isAdmin = getRole() === 'admin';
   list.innerHTML = channels.map(c => `
     <div class="channel-item${currentChannel && currentChannel.id === c.id ? ' active' : ''}"
          onclick="selectChannel(${JSON.stringify(c).replace(/"/g,'&quot;')})">
-      <div class="channel-name"># ${c.name}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
+        <div class="channel-name"># ${c.name}</div>
+        ${isAdmin && c.name !== 'general' ? `<span style="color:var(--text-muted);font-size:13px;cursor:pointer;padding:0 4px;opacity:.5" title="Delete channel"
+          onclick="event.stopPropagation();deleteChannel(${c.id},'${c.name}')">✕</span>` : ''}
+      </div>
       ${c.description ? `<div class="channel-preview">${c.description}</div>` : ''}
     </div>
   `).join('');
@@ -187,6 +192,20 @@ function showNewChannelModal() {
   document.getElementById('newChannelName').value = '';
   document.getElementById('newChannelDesc').value = '';
   new bootstrap.Modal(document.getElementById('newChannelModal')).show();
+}
+
+async function deleteChannel(id, name) {
+  if (!confirm(`Delete #${name} and all its messages? This cannot be undone.`)) return;
+  const res = await fetch(`/api/v1/chat/channels/${id}`, {
+    method: 'DELETE', headers: authHeaders()
+  }).then(r => r.json());
+  if (res.success) {
+    if (currentChannel && currentChannel.id === id) currentChannel = null;
+    showToast(`#${name} deleted`);
+    await loadChannels();
+  } else {
+    showToast(res.error || 'Delete failed', 'danger');
+  }
 }
 
 async function createChannel() {
