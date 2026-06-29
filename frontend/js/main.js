@@ -1,4 +1,4 @@
-// Shared auth + sidebar logic — included on every protected page
+// Shared auth + sidebar logic — loaded on every protected page
 
 function getToken()    { return localStorage.getItem('token'); }
 function getUserName() { return localStorage.getItem('userName'); }
