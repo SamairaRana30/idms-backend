@@ -139,9 +139,9 @@
 </div>
 
 <script>
-  const API = 'https://idms-backend-deu6.onrender.com/api/v1';
+  const API = '/api/v1';
   const token = localStorage.getItem('token');
-  if (!token) window.location.href = '/frontend/login.html';
+  if (!token) window.location.href = '/frontend/index.html';
 
   const params = new URLSearchParams(window.location.search);
   const ballotId = params.get('id');

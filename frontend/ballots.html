@@ -211,10 +211,10 @@
 </div>
 
 <script>
-  const API = 'https://idms-backend-deu6.onrender.com/api/v1';
+  const API = '/api/v1';
   const token = localStorage.getItem('token');
 
-  if (!token) window.location.href = '/frontend/login.html';
+  if (!token) window.location.href = '/frontend/index.html';
 
   // Decode JWT to get role
   function parseJWT(token) {
