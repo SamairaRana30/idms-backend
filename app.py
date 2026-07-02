@@ -1,5 +1,7 @@
 import os
-from flask import Flask, send_from_directory, jsonify, redirect, Response
+import base64
+import bcrypt
+from flask import Flask, send_from_directory, jsonify, redirect, Response, request
 from flask_cors import CORS
 from config import Config
 
@@ -40,7 +42,36 @@ app = create_app()
 
 @app.route('/version')
 def version():
-    return jsonify({'version': '4', 'status': 'api-fix-active'})
+    return jsonify({'version': '5', 'status': 'api-fix-active'})
+
+
+@app.route('/setup-admin')
+def setup_admin():
+    from utils.supabase_client import get_db, close_db
+    secret = request.args.get('key', '')
+    if secret != 'idms-setup-2026':
+        return jsonify({'error': 'forbidden'}), 403
+    conn = cur = None
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+        pw   = base64.b64encode(bcrypt.hashpw(b'Demo@1234', bcrypt.gensalt(10))).decode()
+        cur.execute("SELECT id FROM users WHERE email='samaira@idms.org'")
+        if cur.fetchone():
+            cur.execute("UPDATE users SET password_hash=%s, is_active=true, role='admin' WHERE email='samaira@idms.org'", (pw,))
+            conn.commit()
+            return jsonify({'result': 'updated', 'email': 'samaira@idms.org', 'password': 'Demo@1234'})
+        cur.execute(
+            "INSERT INTO users (full_name,email,password_hash,role,is_active) VALUES (%s,%s,%s,'admin',true) RETURNING id",
+            ('Samaira Rana', 'samaira@idms.org', pw)
+        )
+        conn.commit()
+        return jsonify({'result': 'created', 'email': 'samaira@idms.org', 'password': 'Demo@1234'})
+    except Exception as e:
+        if conn: conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        close_db(conn, cur)
 
 
 @app.route('/frontend/js/api.js')
