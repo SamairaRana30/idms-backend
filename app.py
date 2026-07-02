@@ -45,6 +45,20 @@ def version():
     return jsonify({'version': '5', 'status': 'api-fix-active'})
 
 
+@app.route('/run-seed')
+def run_seed():
+    secret = request.args.get('key', '')
+    if secret != 'idms-setup-2026':
+        return jsonify({'error': 'forbidden'}), 403
+    try:
+        import seed as seed_module
+        seed_module.seed()
+        return jsonify({'result': 'seed complete — check the app!'})
+    except Exception as e:
+        import traceback
+        return jsonify({'error': str(e), 'trace': traceback.format_exc()}), 500
+
+
 @app.route('/setup-admin')
 def setup_admin():
     from utils.supabase_client import get_db, close_db
