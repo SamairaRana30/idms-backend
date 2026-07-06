@@ -6,9 +6,9 @@ from supabase import create_client
 
 voting_bp = Blueprint('voting', __name__)
 
-JWT_SECRET = os.getenv('JWT_SECRET', 'my_super_secret_key_12345')
-SUPABASE_URL = "https://pkkwcefyqskgfchmemhe.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBra3djZWZ5cXNrZ2ZjaG1lbWhlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjY3NTI2MiwiZXhwIjoyMDkyMjUxMjYyfQ.x--s_YHcehZ-evQvSOEd51clibf1vcfaqiTqShxNyEU"
+JWT_SECRET = os.getenv('JWT_SECRET')
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 def get_sb():
     return create_client(SUPABASE_URL, SUPABASE_KEY)
